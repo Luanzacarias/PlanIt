@@ -1,0 +1,80 @@
+{
+	"info": {
+		"_postman_id": "388bc26f-9ff0-405a-a0c8-76c98d93d9eb",
+		"name": "Planit",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Get all",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/v1/{{categories}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v1",
+								"{{categories}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \" aa \",\n    \"description\": \"testando\"\n}"
+						},
+						"url": {
+							"raw": "{{url}}/v1/{{categories}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v1",
+								"{{categories}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ping",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}",
+					"host": [
+						"{{url}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
