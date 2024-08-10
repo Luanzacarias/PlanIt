@@ -1,4 +1,4 @@
-# Sistema de Gerenciamento de Petshop
+# PlanIt
 
 ## Integrantes
 - **Emanuel Reino Almeida da Costa Santos** - [Emanuel-AL](https://github.com/Emanuel-AL)

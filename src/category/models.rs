@@ -3,6 +3,26 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+pub enum Color {
+    #[serde(rename = "ORANGE")]
+    Orange,
+    #[serde(rename = "YELLOW")]
+    Yellow,
+    #[serde(rename = "GREEN")]
+    Green,
+}
+
+impl Color {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Color::Orange => "ORANGE",
+            Color::Yellow => "YELLOW",
+            Color::Green => "GREEN",
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Category {
     #[serde(
         rename = "_id",
@@ -12,5 +32,5 @@ pub struct Category {
     )]
     pub id: Option<ObjectId>,
     pub title: String,
-    pub description: String,
+    pub color: Color,
 }

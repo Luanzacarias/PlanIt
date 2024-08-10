@@ -3,6 +3,8 @@ use crate::category::repository::CategoryRepository;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
 
+use super::models::Color;
+
 pub struct CategoryService {
     repository: CategoryRepository,
 }
@@ -15,12 +17,12 @@ impl CategoryService {
     pub async fn create_category(
         &self,
         title: String,
-        description: String,
+        color: Color,
     ) -> Result<ObjectId, Error> {
         let new_category = Category {
             id: None,
             title,
-            description,
+            color,
         };
         self.repository.create_category(new_category).await
     }

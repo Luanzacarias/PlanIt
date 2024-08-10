@@ -5,10 +5,12 @@ use crate::category::repository::CategoryRepository;
 use crate::category::service::CategoryService;
 use crate::AppState;
 
+use super::models::Color;
+
 #[derive(Deserialize)]
 struct CreateCategoryRequest {
     title: String,
-    description: String,
+    color: Color,
 }
 
 #[post("/v1/categories")]
@@ -25,7 +27,7 @@ async fn create_category(
     let repository = CategoryRepository::new(&state.mongodb);
     let service = CategoryService::new(repository);
     match service
-        .create_category(item.title.clone(), item.description.clone())
+        .create_category(item.title.clone(), item.color)
         .await
     {
         Ok(id) => HttpResponse::Ok().json(id.to_string()),
