@@ -16,11 +16,13 @@ impl CategoryService {
 
     pub async fn create_category(
         &self,
+        user_id: ObjectId,
         title: String,
         color: Color,
     ) -> Result<ObjectId, Error> {
         let new_category = Category {
             id: None,
+            user_id,
             title,
             color,
         };

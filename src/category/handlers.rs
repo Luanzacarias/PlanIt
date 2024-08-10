@@ -1,4 +1,5 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
+use mongodb::bson::oid::ObjectId;
 use serde::Deserialize;
 
 use crate::category::repository::CategoryRepository;
@@ -23,11 +24,11 @@ async fn create_category(
     if item.title.is_empty() {
         return HttpResponse::BadRequest().json("Title cannot be empty");
     }
-
+    let user_id = ObjectId::new();
     let repository = CategoryRepository::new(&state.mongodb);
     let service = CategoryService::new(repository);
     match service
-        .create_category(item.title.clone(), item.color)
+        .create_category(user_id, item.title.clone(), item.color)
         .await
     {
         Ok(id) => HttpResponse::Ok().json(id.to_string()),
