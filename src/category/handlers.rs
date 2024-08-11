@@ -1,18 +1,13 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, Responder};
 use mongodb::bson::oid::ObjectId;
-use serde::Deserialize;
+use validator::Validate;
 
-use crate::category::repository::CategoryRepository;
-use crate::category::service::CategoryService;
+use crate::helpers::api_response::{api_success, api_unknown_error, api_validation_error};
 use crate::AppState;
 
-use super::models::Color;
-
-#[derive(Deserialize)]
-struct CreateCategoryRequest {
-    title: String,
-    color: Color,
-}
+use super::dto::CreateCategoryRequest;
+use super::repository::CategoryRepository;
+use super::service::CategoryService;
 
 #[post("/v1/categories")]
 async fn create_category(
@@ -21,9 +16,11 @@ async fn create_category(
 ) -> impl Responder {
     let mut item: CreateCategoryRequest = item.into_inner();
     item.title = item.title.trim().to_string();
-    if item.title.is_empty() {
-        return HttpResponse::BadRequest().json("Title cannot be empty");
+
+    if let Err(errors) = item.validate() {
+        return api_validation_error(errors);
     }
+
     let user_id = ObjectId::new();
     let repository = CategoryRepository::new(&state.mongodb);
     let service = CategoryService::new(repository);
@@ -31,8 +28,8 @@ async fn create_category(
         .create_category(user_id, item.title.clone(), item.color)
         .await
     {
-        Ok(id) => HttpResponse::Ok().json(id.to_string()),
-        Err(err) => HttpResponse::InternalServerError().json(err.to_string()),
+        Ok(id) => api_success("Category created successfully", Some(id.to_string())),
+        Err(err) => api_unknown_error(err.to_string().as_str()),
     }
 }
 
@@ -42,8 +39,8 @@ async fn get_categories(state: web::Data<AppState>) -> impl Responder {
     let service = CategoryService::new(repository);
 
     match service.get_all_categories().await {
-        Ok(categories) => HttpResponse::Ok().json(categories),
-        Err(err) => HttpResponse::InternalServerError().json(err.to_string()),
+        Ok(categories) => api_success("Categories retrieved successfully", Some(categories)),
+        Err(err) => api_unknown_error(err.to_string().as_str()),
     }
 }
 

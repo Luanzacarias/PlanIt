@@ -1,9 +1,8 @@
-use crate::category::models::Category;
-use crate::category::repository::CategoryRepository;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
 
-use super::models::Color;
+use super::models::{Category, Color};
+use super::repository::CategoryRepository;
 
 pub struct CategoryService {
     repository: CategoryRepository,
@@ -26,6 +25,9 @@ impl CategoryService {
             title,
             color,
         };
+
+        // TODO: Validate if already exists a category with the same title for the same user
+
         self.repository.create_category(new_category).await
     }
 

@@ -31,7 +31,7 @@ pub struct Category {
         deserialize_with = "deserialize_object_id"
     )]
     pub id: Option<ObjectId>,
-    #[serde(skip)]
+    #[serde(skip_serializing)]
     pub user_id: ObjectId,
     pub title: String,
     pub color: Color,

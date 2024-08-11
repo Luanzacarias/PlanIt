@@ -1,6 +1,7 @@
-use crate::category::models::Category;
 use mongodb::error::Error;
 use mongodb::{bson::doc, Collection, Database};
+
+use super::models::Category;
 
 pub struct CategoryRepository {
     collection: Collection<Category>,
