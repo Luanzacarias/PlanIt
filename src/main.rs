@@ -5,6 +5,7 @@ use log::info;
 use mongodb::Database;
 use std::env;
 
+mod user;
 mod category;
 mod config;
 mod helpers;
@@ -28,6 +29,7 @@ async fn main() -> std::io::Result<()> {
             }))
             .wrap(middleware::Logger::default())
             .service(index_handler)
+            .configure(user::handles)
             .configure(category::handles)
     })
     .bind(app_host.clone())?
