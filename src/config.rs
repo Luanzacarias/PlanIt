@@ -9,10 +9,10 @@ pub async fn get_mongodb() -> Database {
     let client = Client::with_options(client_options).expect("Failed to create MongoDB client");
 
     client
-        .database("PlanIt")
+        .database("planite")
         .run_command(doc! {"ping": 1})
         .await
         .expect("Failed to ping MongoDB server");
 
-    client.database("PlanIt")
+        client.database("planite")
 }
