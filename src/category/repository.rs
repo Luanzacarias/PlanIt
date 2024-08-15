@@ -1,3 +1,4 @@
+use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
 use mongodb::{bson::doc, Collection, Database};
 
@@ -31,5 +32,9 @@ impl CategoryRepository {
         }
 
         Ok(categories)
+    }
+    pub async fn get_category_by_title(&self, user_id: ObjectId, title: &str,) -> Result<Option<Category>, Error> {
+        let filter = doc! {"user_id": user_id, "title": title};
+        self.collection.find_one(filter).await
     }
 }
