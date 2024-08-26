@@ -1,7 +1,7 @@
 use mongodb::{bson::doc, options::ClientOptions, Client, Database};
 use std::env;
 
-pub async fn get_mongodb() -> Database {
+pub async fn get_database() -> Database {
     let uri = env::var("MONGO_DB_URI").expect("ENV: MONGO_DB_URI must be set");
     let client_options = ClientOptions::parse(uri)
         .await
