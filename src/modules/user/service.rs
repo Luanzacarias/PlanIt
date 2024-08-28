@@ -7,7 +7,7 @@ use super::repository::UserRepository;
 
 
 #[derive(Error, Debug)]
-pub enum ServiceError {
+pub enum UserServiceError {
     #[error("User with this email already exists")]
     UserAlreadyExists,
     #[error("Database error: {0}")]
@@ -23,9 +23,9 @@ impl UserService {
         UserService { repository }
     }
 
-    pub async fn create_user(&self, data: UserSignUpRequest) -> Result<ObjectId, ServiceError> {
+    pub async fn create_user(&self, data: UserSignUpRequest) -> Result<ObjectId, UserServiceError> {
         if (self.repository.find_user_by_email(&data.email).await?).is_some() {
-            return Err(ServiceError::UserAlreadyExists);
+            return Err(UserServiceError::UserAlreadyExists);
         }
 
         let new_user = User {
@@ -38,6 +38,6 @@ impl UserService {
         self.repository
             .create_user(new_user)
             .await
-            .map_err(ServiceError::from)
+            .map_err(UserServiceError::from)
     }
 }

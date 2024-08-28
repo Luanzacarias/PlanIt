@@ -30,7 +30,6 @@ impl CategoryService {
         title: String,
         color: Color,
     ) -> Result<ObjectId, CategoryServiceError> {
-        //fix: Categories with same name and atributes are having diferent Ids, so a error is never thrown.
         if let Some(_existing_category) = self.repository.get_category_by_title(user_id, &title).await? {
             return Err(CategoryServiceError::CategoryAlreadyExists);
         }

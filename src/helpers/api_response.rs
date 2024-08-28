@@ -1,46 +1,98 @@
-use actix_web::HttpResponse;
+use axum::{
+    http::{header, StatusCode},
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct SuccessApiResponse<T> {
-    pub message: String,
-    pub data: Option<T>,
+#[serde(untagged)]
+pub enum ApiResponse {
+    Ok {
+        status: String,
+        message: String,
+        data: Option<serde_json::Value>,
+    },
+    Created {
+        status: String,
+        message: String,
+        data: Option<serde_json::Value>,
+    },
+    BadRequestError {
+        status: String,
+        message: String,
+        errors: Option<serde_json::Value>,
+    },
+    UnprocessableEntity {
+        status: String,
+        message: String,
+        errors: Option<serde_json::Value>,
+    },
+    ServerError {
+        status: String,
+        message: String,
+        errors: Option<serde_json::Value>,
+    },
 }
 
-impl<T> SuccessApiResponse<T> {
-    pub fn new(message: String, data: Option<T>) -> Self {
-        SuccessApiResponse { message, data }
+impl ApiResponse {
+    pub fn ok<T: Serialize>(message: &str, data: Option<T>) -> Self {
+        ApiResponse::Ok {
+            status: "success".to_string(),
+            message: message.to_string(),
+            data: data.map(|d| serde_json::to_value(d).unwrap()),
+        }
     }
-}
 
-#[derive(Serialize)]
-pub struct ErrorApiResponse<T> {
-    pub message: String,
-    pub errors: Option<T>,
-}
-
-impl<T> ErrorApiResponse<T> {
-    pub fn new(message: String, errors: Option<T>) -> Self {
-        ErrorApiResponse { message, errors }
+    pub fn created<T: Serialize>(message: &str, data: Option<T>) -> Self {
+        ApiResponse::Created {
+            status: "success".to_string(),
+            message: message.to_string(),
+            data: data.map(|d| serde_json::to_value(d).unwrap()),
+        }
     }
 
-    pub fn from_validation_errors(errors: T) -> Self {
-        ErrorApiResponse {
-            message: "Validation error".to_string(),
-            errors: Some(errors),
+    pub fn bad_request<T: Serialize>(message: &str, errors: Option<T>) -> Self {
+        ApiResponse::BadRequestError {
+            status: "error".to_string(),
+            message: message.to_string(),
+            errors: errors.map(|e| serde_json::to_value(e).unwrap()),
+        }
+    }
+
+    pub fn unprocessable_entity<T: Serialize>(message: &str, errors: Option<T>) -> Self {
+        ApiResponse::UnprocessableEntity {
+            status: "error".to_string(),
+            message: message.to_string(),
+            errors: errors.map(|e| serde_json::to_value(e).unwrap()),
+        }
+    }
+
+    pub fn server_error<T: Serialize>(message: Option<&str>, errors: Option<T>) -> Self {
+        ApiResponse::ServerError {
+            status: "error".to_string(),
+            message: message.unwrap_or("Internal server error").to_string(),
+            errors: errors.map(|e| serde_json::to_value(e).unwrap()),
         }
     }
 }
 
+impl IntoResponse for ApiResponse {
+    fn into_response(self) -> Response {
+        let status_code: StatusCode = match &self {
+            ApiResponse::Ok { .. } => StatusCode::OK,
+            ApiResponse::Created { .. } => StatusCode::CREATED,
+            ApiResponse::BadRequestError { .. } => StatusCode::BAD_REQUEST,
+            ApiResponse::UnprocessableEntity { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            ApiResponse::ServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+        };
 
-pub fn api_success<T: serde::Serialize>(message: &str, data: Option<T>) -> HttpResponse {
-    HttpResponse::Ok().json(SuccessApiResponse::new(message.into(), data))
-}
-
-pub fn api_unknown_error(err: &str) -> HttpResponse {
-    HttpResponse::InternalServerError().json(ErrorApiResponse::new(err.into(), None::<()>))
-}
-
-pub fn api_validation_error(errors: validator::ValidationErrors) -> HttpResponse {
-    HttpResponse::BadRequest().json(ErrorApiResponse::from_validation_errors(errors))
+        let json_response = Json(self);
+        (
+            status_code,
+            [(header::CONTENT_TYPE, "application/json")],
+            json_response,
+        )
+            .into_response()
+    }
 }

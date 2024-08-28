@@ -1,40 +1,46 @@
-use actix_web::{post, web, HttpResponse, Responder};
+use axum::extract::State;
+use axum::response::IntoResponse;
+use axum::{extract::Json, routing::post, Router};
+use std::sync::Arc;
 use validator::Validate;
 
-use crate::helpers::api_response::{ErrorApiResponse, SuccessApiResponse};
+use crate::helpers::api_response::ApiResponse;
 use crate::AppState;
 
 use super::dto::UserSignUpRequest;
 use super::repository::UserRepository;
-use super::service::{ServiceError, UserService};
+use super::service::{UserServiceError, UserService};
 
-#[post("/v1/signup")]
-async fn sign_up(state: web::Data<AppState>, item: web::Json<UserSignUpRequest>) -> impl Responder {
-    let mut item: UserSignUpRequest = item.into_inner();
-    item.name = item.name.trim().to_string();
-    item.email = item.email.trim().to_string();
-    item.phone = item.phone.trim().to_string();
+async fn sign_up(
+    State(state): State<Arc<AppState>>,
+    Json(mut payload): Json<UserSignUpRequest>,
+) -> impl IntoResponse {
+    payload.name = payload.name.trim().to_string();
+    payload.email = payload.email.trim().to_string();
+    payload.phone = payload.phone.trim().to_string();
 
-    if let Err(errors) = item.validate() {
-        return HttpResponse::BadRequest().json(ErrorApiResponse::from_validation_errors(errors));
+    if let Err(errors) = payload.validate() {
+        return ApiResponse::bad_request("Validation failed", Some(errors)).into_response();
     }
 
     match UserService::new(UserRepository::new(&state.mongodb))
-        .create_user(item)
+        .create_user(payload)
         .await
     {
-        Ok(id) => HttpResponse::Created().json(SuccessApiResponse::new(
-            "User created successfully".to_string(),
-            Some(id.to_string()),
-        )),
-        Err(ServiceError::UserAlreadyExists) => HttpResponse::Conflict().json(
-            ErrorApiResponse::new(ServiceError::UserAlreadyExists.to_string(), None::<()>),
-        ),
-        Err(err) => HttpResponse::InternalServerError()
-            .json(ErrorApiResponse::new(err.to_string(), None::<()>)),
+        Ok(id) => {
+            ApiResponse::created("User created successfully", Some(id.to_string())).into_response()
+        }
+        Err(UserServiceError::UserAlreadyExists) => {
+            ApiResponse::unprocessable_entity(UserServiceError::UserAlreadyExists.to_string().as_str(), None::<()>).into_response()
+        }
+        Err(err) => {
+            ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()
+        }
     }
 }
 
-pub fn handles(cfg: &mut web::ServiceConfig) {
-    cfg.service(sign_up);
+pub fn handles() -> Router<Arc<AppState>> {
+    let v1: Router<Arc<AppState>> = Router::new().route("/signup", post(sign_up));
+
+    Router::new().nest("/v1", v1)
 }
