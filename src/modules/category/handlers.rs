@@ -14,7 +14,7 @@ use crate::{
     modules::auth::{self, dto::AuthState},
 };
 
-use super::dto::CreateCategoryRequest;
+use super::dto::{CategoryResponse, CreateCategoryRequest};
 use super::repository::CategoryRepository;
 use super::service::{CategoryService, CategoryServiceError};
 
@@ -33,7 +33,7 @@ async fn create_category(
     let service = CategoryService::new(repository);
 
     match service
-        .create_category(user.id, payload.title.clone(), payload.color)
+        .create_category_for_user(&user.id, payload.title.clone(), payload.color)
         .await
     {
         Ok(id) => ApiResponse::created("Category created successfully", Some(id.to_string()))
@@ -51,13 +51,29 @@ async fn create_category(
     }
 }
 
-async fn get_categories(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+async fn get_categories(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<AuthState>,
+) -> impl IntoResponse {
     let repository = CategoryRepository::new(&state.mongodb);
     let service = CategoryService::new(repository);
 
-    match service.get_all_categories().await {
+    match service.get_all_user_categories(&user.id).await {
         Ok(categories) => {
-            ApiResponse::ok("Categories retrieved successfully", Some(categories)).into_response()
+            let response_categories: Vec<_> = categories
+                .into_iter()
+                .map(|category| CategoryResponse {
+                    _id: category.id.unwrap().to_string(),
+                    title: category.title,
+                    color: category.color,
+                })
+                .collect();
+
+            ApiResponse::ok(
+                "Categories retrieved successfully",
+                Some(response_categories),
+            )
+            .into_response()
         }
         Err(err) => {
             ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()

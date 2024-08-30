@@ -23,8 +23,16 @@ impl CategoryRepository {
         Ok(id)
     }
 
-    pub async fn get_all_categories(&self) -> Result<Vec<Category>, Error> {
-        let mut cursor = self.collection.find(doc! {}).await?;
+    pub async fn get_all_user_categories(
+        &self,
+        &user_id: &ObjectId,
+    ) -> Result<Vec<Category>, Error> {
+        let mut cursor = self
+            .collection
+            .find(doc! {
+                "user_id": user_id
+            })
+            .await?;
         let mut categories: Vec<Category> = Vec::new();
 
         while cursor.advance().await? {
@@ -33,7 +41,11 @@ impl CategoryRepository {
 
         Ok(categories)
     }
-    pub async fn get_category_by_title(&self, user_id: ObjectId, title: &str,) -> Result<Option<Category>, Error> {
+    pub async fn get_category_by_title(
+        &self,
+        &user_id: &ObjectId,
+        title: &str,
+    ) -> Result<Option<Category>, Error> {
         let filter = doc! {"user_id": user_id, "title": title};
         self.collection.find_one(filter).await
     }

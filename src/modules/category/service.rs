@@ -24,13 +24,17 @@ impl CategoryService {
         CategoryService { repository }
     }
 
-    pub async fn create_category(
+    pub async fn create_category_for_user(
         &self,
-        user_id: ObjectId,
+        &user_id: &ObjectId,
         title: String,
         color: Color,
     ) -> Result<ObjectId, CategoryServiceError> {
-        if let Some(_existing_category) = self.repository.get_category_by_title(user_id, &title).await? {
+        if let Some(_existing_category) = self
+            .repository
+            .get_category_by_title(&user_id, &title)
+            .await?
+        {
             return Err(CategoryServiceError::CategoryAlreadyExists);
         }
         let new_category = Category {
@@ -44,7 +48,10 @@ impl CategoryService {
         Ok(result)
     }
 
-    pub async fn get_all_categories(&self) -> Result<Vec<Category>, Error> {
-        self.repository.get_all_categories().await
+    pub async fn get_all_user_categories(
+        &self,
+        &user_id: &ObjectId,
+    ) -> Result<Vec<Category>, Error> {
+        self.repository.get_all_user_categories(&user_id).await
     }
 }
