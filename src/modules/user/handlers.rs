@@ -9,7 +9,7 @@ use crate::AppState;
 
 use super::dto::UserSignUpRequest;
 use super::repository::UserRepository;
-use super::service::{UserServiceError, UserService};
+use super::service::{UserService, UserServiceError};
 
 async fn sign_up(
     State(state): State<Arc<AppState>>,
@@ -30,9 +30,11 @@ async fn sign_up(
         Ok(id) => {
             ApiResponse::created("User created successfully", Some(id.to_string())).into_response()
         }
-        Err(UserServiceError::UserAlreadyExists) => {
-            ApiResponse::unprocessable_entity(UserServiceError::UserAlreadyExists.to_string().as_str(), None::<()>).into_response()
-        }
+        Err(UserServiceError::UserAlreadyExists) => ApiResponse::unprocessable_entity(
+            UserServiceError::UserAlreadyExists.to_string().as_str(),
+            None::<()>,
+        )
+        .into_response(),
         Err(err) => {
             ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()
         }
@@ -41,6 +43,5 @@ async fn sign_up(
 
 pub fn handles() -> Router<Arc<AppState>> {
     let v1: Router<Arc<AppState>> = Router::new().route("/signup", post(sign_up));
-
     Router::new().nest("/v1", v1)
 }
