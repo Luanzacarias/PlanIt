@@ -1,4 +1,4 @@
-use crate::helpers::object_id_helper::{deserialize_object_id, serialize_object_id};
+use crate::helpers::object_id_helper::{deserialize_option_object_id, serialize_option_object_id};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
@@ -27,8 +27,8 @@ pub struct Category {
     #[serde(
         rename = "_id",
         skip_serializing_if = "Option::is_none",
-        serialize_with = "serialize_object_id",
-        deserialize_with = "deserialize_object_id"
+        serialize_with = "serialize_option_object_id",
+        deserialize_with = "deserialize_option_object_id"
     )]
     pub id: Option<ObjectId>,
     #[serde(skip_serializing)]
