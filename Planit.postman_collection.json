@@ -11,6 +11,16 @@
 				{
 					"name": "Get all",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -20,12 +30,12 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/v1/{{categories}}",
+							"raw": "{{url}}/{{version}}/{{categories}}",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
-								"v1",
+								"{{version}}",
 								"{{categories}}"
 							]
 						}
@@ -35,6 +45,16 @@
 				{
 					"name": "Create",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -45,15 +65,15 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \" aa \",\n    \"description\": \"testando\"\n}"
+							"raw": "{\n    \"title\": \"teste\",\n    \"color\": \"ORANGE\"\n}"
 						},
 						"url": {
-							"raw": "{{url}}/v1/{{categories}}",
+							"raw": "{{url}}/{{version}}/{{categories}}",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
-								"v1",
+								"{{version}}",
 								"{{categories}}"
 							]
 						}
@@ -71,6 +91,75 @@
 					"raw": "{{url}}",
 					"host": [
 						"{{url}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sign Up",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Peter Park\",\n    \"email\": \"miranha@marvel.com\",\n    \"password\": \"MióSuperUniverso\",\n    \"phone\": \"99999999999\"\n}\n    "
+				},
+				"url": {
+					"raw": "{{url}}/{{version}}/signup",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"{{version}}",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var { data } = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"token\", data.token);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}\n    "
+				},
+				"url": {
+					"raw": "{{url}}/{{version}}/login",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"{{version}}",
+						"login"
 					]
 				}
 			},
