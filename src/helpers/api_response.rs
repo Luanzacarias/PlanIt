@@ -23,6 +23,10 @@ pub enum ApiResponse {
         message: String,
         errors: Option<serde_json::Value>,
     },
+    Unauthorized {
+        status: String,
+        message: String,
+    },
     UnprocessableEntity {
         status: String,
         message: String,
@@ -60,6 +64,13 @@ impl ApiResponse {
         }
     }
 
+    pub fn unauthorized(message: &str) -> Self {
+        ApiResponse::Unauthorized {
+            status: "error".to_string(),
+            message: message.to_string(),
+        }
+    }
+
     pub fn unprocessable_entity<T: Serialize>(message: &str, errors: Option<T>) -> Self {
         ApiResponse::UnprocessableEntity {
             status: "error".to_string(),
@@ -83,6 +94,7 @@ impl IntoResponse for ApiResponse {
             ApiResponse::Ok { .. } => StatusCode::OK,
             ApiResponse::Created { .. } => StatusCode::CREATED,
             ApiResponse::BadRequestError { .. } => StatusCode::BAD_REQUEST,
+            ApiResponse::Unauthorized { .. } => StatusCode::UNAUTHORIZED,
             ApiResponse::UnprocessableEntity { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             ApiResponse::ServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
         };
