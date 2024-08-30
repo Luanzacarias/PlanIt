@@ -1,15 +1,18 @@
 use axum::{
     extract::{Json, State},
+    middleware,
     response::IntoResponse,
-    routing::{get, post},
-    Router,
+    routing::post,
+    Extension, Router,
 };
-use mongodb::bson::oid::ObjectId;
 use std::sync::Arc;
 use validator::Validate;
 
-use crate::helpers::api_response::ApiResponse;
 use crate::AppState;
+use crate::{
+    helpers::api_response::ApiResponse,
+    modules::auth::{self, dto::AuthState},
+};
 
 use super::dto::CreateCategoryRequest;
 use super::repository::CategoryRepository;
@@ -17,6 +20,7 @@ use super::service::{CategoryService, CategoryServiceError};
 
 async fn create_category(
     State(state): State<Arc<AppState>>,
+    Extension(user): Extension<AuthState>,
     Json(mut payload): Json<CreateCategoryRequest>,
 ) -> impl IntoResponse {
     payload.title = payload.title.trim().to_string();
@@ -25,12 +29,11 @@ async fn create_category(
         return ApiResponse::bad_request("Validation failed", Some(errors)).into_response();
     }
 
-    let user_id = ObjectId::new();
     let repository = CategoryRepository::new(&state.mongodb);
     let service = CategoryService::new(repository);
 
     match service
-        .create_category(user_id, payload.title.clone(), payload.color)
+        .create_category(user.id, payload.title.clone(), payload.color)
         .await
     {
         Ok(id) => ApiResponse::created("Category created successfully", Some(id.to_string()))
@@ -63,5 +66,7 @@ async fn get_categories(State(state): State<Arc<AppState>>) -> impl IntoResponse
 }
 
 pub fn handles() -> Router<Arc<AppState>> {
-    Router::new().route("/v1/categories", post(create_category).get(get_categories))
+    Router::new()
+        .route("/v1/categories", post(create_category).get(get_categories))
+        .layer(middleware::from_fn(auth::middlewares::authorize))
 }
