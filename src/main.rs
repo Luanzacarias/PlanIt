@@ -6,7 +6,7 @@ use axum::{extract::Json, routing::get, Router};
 use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
-use modules::{auth, category, user};
+use modules::{auth, category, task, user};
 use mongodb::Database;
 use std::env;
 use std::sync::Arc;
@@ -35,6 +35,7 @@ async fn main() {
         .nest("/", auth::handles())
         .nest("/", user::handles())
         .nest("/", category::handles())
+        .nest("/", task::handles())
         .with_state(state);
 
     let listener = TcpListener::bind(app_host)
