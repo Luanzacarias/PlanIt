@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
-use tower_http::cors::CorsLayer;
 
 use crate::{
     helpers::api_response::ApiResponse,
