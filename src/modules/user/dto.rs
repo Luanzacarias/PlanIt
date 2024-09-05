@@ -12,3 +12,9 @@ pub struct UserSignUpRequest {
     #[validate(length(min = 10, max = 15))]
     pub phone: String,
 }
+
+#[derive(Deserialize, Validate)]
+pub struct UserExistsQuery {
+    #[validate(email)]
+    pub email: String,
+}

@@ -37,6 +37,10 @@ pub enum ApiResponse {
         message: String,
         errors: Option<serde_json::Value>,
     },
+    NotFound {
+        status: String,
+        message: String,
+    },
 }
 
 impl ApiResponse {
@@ -86,6 +90,13 @@ impl ApiResponse {
             errors: errors.map(|e| serde_json::to_value(e).unwrap()),
         }
     }
+
+    pub fn not_found(message: &str) -> Self {
+        ApiResponse::NotFound {
+            status: "error".to_string(),
+            message: message.to_string(),
+        }
+    }
 }
 
 impl IntoResponse for ApiResponse {
@@ -97,6 +108,7 @@ impl IntoResponse for ApiResponse {
             ApiResponse::Unauthorized { .. } => StatusCode::UNAUTHORIZED,
             ApiResponse::UnprocessableEntity { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             ApiResponse::ServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiResponse::NotFound { .. } => StatusCode::NOT_FOUND,
         };
 
         let json_response = Json(self);
