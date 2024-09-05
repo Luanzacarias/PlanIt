@@ -1,5 +1,4 @@
 use axum::extract::{Query, State};
-use axum::http::{Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::{extract::Json, routing::{post, get}, Router};
 use std::sync::Arc;
@@ -56,10 +55,7 @@ async fn user_exists(
             ApiResponse::ok("User exists", Some(true)).into_response()
         }
         Ok(None) => {
-            Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .body("User not found".into())
-                .unwrap()
+            ApiResponse::not_found("User not found").into_response()
         }
         Err(err) => {
             ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()
