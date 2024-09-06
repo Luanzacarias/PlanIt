@@ -11,6 +11,7 @@ use mongodb::Database;
 use std::env;
 use std::sync::Arc;
 use tokio::net::TcpListener;
+use tower_http::cors::{CorsLayer};
 
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 
@@ -35,6 +36,7 @@ async fn main() {
         .nest("/", auth::handles())
         .nest("/", user::handles())
         .nest("/", category::handles())
+        .layer(CorsLayer::permissive())
         .with_state(state);
 
     let listener = TcpListener::bind(app_host)

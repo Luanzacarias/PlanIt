@@ -1,13 +1,13 @@
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::response::IntoResponse;
-use axum::{extract::Json, routing::post, Router};
+use axum::{extract::Json, routing::{post, get}, Router};
 use std::sync::Arc;
 use validator::Validate;
 
 use crate::helpers::api_response::ApiResponse;
 use crate::AppState;
 
-use super::dto::UserSignUpRequest;
+use super::dto::{UserSignUpRequest, UserExistsQuery};
 use super::repository::UserRepository;
 use super::service::{UserService, UserServiceError};
 
@@ -41,7 +41,31 @@ async fn sign_up(
     }
 }
 
+async fn user_exists(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<UserExistsQuery>,
+) -> impl IntoResponse {
+    let email = query.email.trim();
+
+    match UserService::new(UserRepository::new(&state.mongodb))
+        .find_user_by_email(email)
+        .await
+    {
+        Ok(Some(_user)) => {
+            ApiResponse::ok("User exists", Some(true)).into_response()
+        }
+        Ok(None) => {
+            ApiResponse::not_found("User not found").into_response()
+        }
+        Err(err) => {
+            ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()
+        }
+    }
+}
+
 pub fn handles() -> Router<Arc<AppState>> {
-    let v1: Router<Arc<AppState>> = Router::new().route("/signup", post(sign_up));
+    let v1: Router<Arc<AppState>> = Router::new()
+        .route("/signup", post(sign_up))
+        .route("/user-exists", get(user_exists));
     Router::new().nest("/v1", v1)
 }
