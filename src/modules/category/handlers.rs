@@ -11,14 +11,14 @@ use mongodb::bson::oid::ObjectId;
 use std::sync::Arc;
 use validator::Validate;
 
-use crate::AppState;
+use crate::{helpers::api_response, AppState};
 use crate::{
     helpers::api_response::ApiResponse,
     modules::auth::{self, dto::AuthState},
 };
 
-use super::repository::CategoryRepository;
 use super::service::{CategoryService, CategoryServiceError};
+use super::{dto::UpdateCategoryRequest, repository::CategoryRepository};
 use super::{
     dto::{CategoryResponse, CreateCategoryRequest},
     repository,
@@ -75,6 +75,36 @@ async fn create_category(
     }
 }
 
+async fn update_category(
+    State(state): State<Arc<AppState>>,
+    Path(category_id): Path<String>,
+    Json(payload): Json<UpdateCategoryRequest>,
+) -> impl IntoResponse {
+    let repository = CategoryRepository::new(&state.mongodb);
+    let service = CategoryService::new(repository);
+
+    let category_id = ObjectId::parse_str(&category_id).expect("Invalid ObjectId");
+
+    if let Err(errors) = payload.validate() {
+        return ApiResponse::bad_request("Validation failed", Some(errors)).into_response();
+    }
+
+    match service
+        .update_category(category_id, payload.title, payload.color)
+        .await
+    {
+        Ok(_) => ApiResponse::ok("Category updated successfully", None::<()>).into_response(),
+        Err(CategoryServiceError::CategoryNotFound) => ApiResponse::unprocessable_entity(
+            CategoryServiceError::CategoryNotFound.to_string().as_str(),
+            None::<()>,
+        )
+        .into_response(),
+        Err(err) => {
+            ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()
+        }
+    }
+}
+
 async fn get_categories(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<AuthState>,
@@ -108,6 +138,9 @@ async fn get_categories(
 pub fn handles() -> Router<Arc<AppState>> {
     Router::new()
         .route("/v1/categories", post(create_category).get(get_categories))
-        .route("/v1/categories/:category_id", delete(delete_category))
+        .route(
+            "/v1/categories/:category_id",
+            delete(delete_category).put(update_category),
+        )
         .layer(middleware::from_fn(auth::middlewares::authorize))
 }

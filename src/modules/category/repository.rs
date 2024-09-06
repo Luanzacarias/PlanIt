@@ -23,6 +23,21 @@ impl CategoryRepository {
         Ok(id)
     }
 
+    pub async fn update_category(
+        &self,
+        id: ObjectId,
+        updated_category: Category,
+    ) -> Result<(), Error> {
+        let filter = doc! { "_id": id };
+        let update = doc! { "$set": {
+            "title": updated_category.title,
+            "color": updated_category.color.as_str(),
+        } };
+
+        self.collection.update_one(filter, update).await?;
+        Ok(())
+    }
+
     pub async fn delete_category(&self, category_id: ObjectId) -> Result<(), Error> {
         let filter = doc! {"_id": category_id};
         self.collection.delete_one(filter).await?;

@@ -3,6 +3,8 @@ use mongodb::error::Error;
 
 use thiserror::Error;
 
+use crate::modules::user;
+
 use super::models::{Category, Color};
 use super::repository::CategoryRepository;
 
@@ -51,6 +53,34 @@ impl CategoryService {
         Ok(result)
     }
 
+    pub async fn update_category(
+        &self,
+        id: ObjectId,
+        title: String,
+        color: Color,
+    ) -> Result<(), CategoryServiceError> {
+        if let None = self.repository.get_category_by_id(&id).await? {
+            return Err(CategoryServiceError::CategoryNotFound);
+        }
+
+        let updated_category = Category {
+            id: Some(id),
+            user_id: self
+                .repository
+                .get_category_by_id(&id)
+                .await?
+                .unwrap()
+                .user_id,
+            title,
+            color,
+        };
+
+        self.repository
+            .update_category(id, updated_category)
+            .await?;
+        Ok(())
+    }
+
     pub async fn get_all_user_categories(
         &self,
         &user_id: &ObjectId,
@@ -63,7 +93,6 @@ impl CategoryService {
         category_id: ObjectId,
     ) -> Result<(), CategoryServiceError> {
         let result = self.repository.get_category_by_id(&category_id).await;
-        println!("Result: {:?}", result);
         if let Ok(Some(_category)) = result {
             self.repository
                 .delete_category(category_id)
