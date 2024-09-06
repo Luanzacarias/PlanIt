@@ -23,6 +23,12 @@ impl CategoryRepository {
         Ok(id)
     }
 
+    pub async fn delete_category(&self, category_id: ObjectId) -> Result<(), Error> {
+        let filter = doc! {"_id": category_id};
+        self.collection.delete_one(filter).await?;
+        Ok(())
+    }
+
     pub async fn get_all_user_categories(
         &self,
         &user_id: &ObjectId,
@@ -47,6 +53,14 @@ impl CategoryRepository {
         title: &str,
     ) -> Result<Option<Category>, Error> {
         let filter = doc! {"user_id": user_id, "title": title};
+        self.collection.find_one(filter).await
+    }
+
+    pub async fn get_category_by_id(
+        &self,
+        category_id: &ObjectId,
+    ) -> Result<Option<Category>, Error> {
+        let filter = doc! {"_id": category_id};
         self.collection.find_one(filter).await
     }
 }

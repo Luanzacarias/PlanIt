@@ -1,10 +1,13 @@
 use axum::{
+    extract::Path,
     extract::{Json, State},
     middleware,
     response::IntoResponse,
+    routing::delete,
     routing::post,
     Extension, Router,
 };
+use mongodb::bson::oid::ObjectId;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -14,9 +17,30 @@ use crate::{
     modules::auth::{self, dto::AuthState},
 };
 
-use super::dto::{CategoryResponse, CreateCategoryRequest};
 use super::repository::CategoryRepository;
 use super::service::{CategoryService, CategoryServiceError};
+use super::{
+    dto::{CategoryResponse, CreateCategoryRequest},
+    repository,
+};
+
+async fn delete_category(
+    State(state): State<Arc<AppState>>,
+    Path(category_id): Path<String>,
+) -> impl IntoResponse {
+    let repository = CategoryRepository::new(&state.mongodb);
+    let service = CategoryService::new(repository);
+
+    let category_id = ObjectId::parse_str(&category_id).expect("Invalid ObjectId");
+    match service.delete_user_category(category_id).await {
+        Ok(_) => ApiResponse::ok("Category deleted successfully", None::<()>).into_response(),
+        Err(err) => ApiResponse::server_error(
+            Some(format!("Failed to delete category: {}", err).as_str()),
+            None::<()>,
+        )
+        .into_response(),
+    }
+}
 
 async fn create_category(
     State(state): State<Arc<AppState>>,
@@ -84,5 +108,6 @@ async fn get_categories(
 pub fn handles() -> Router<Arc<AppState>> {
     Router::new()
         .route("/v1/categories", post(create_category).get(get_categories))
+        .route("/v1/categories/:category_id", delete(delete_category))
         .layer(middleware::from_fn(auth::middlewares::authorize))
 }

@@ -14,5 +14,5 @@ pub async fn get_database() -> Database {
         .await
         .expect("Failed to ping MongoDB server");
 
-        client.database("planite")
+    client.database("planite")
 }

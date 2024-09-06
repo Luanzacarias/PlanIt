@@ -13,6 +13,9 @@ pub enum CategoryServiceError {
 
     #[error("Database error occurred: {0}")]
     DatabaseError(#[from] Error),
+
+    #[error("Category not found")]
+    CategoryNotFound,
 }
 
 pub struct CategoryService {
@@ -53,5 +56,22 @@ impl CategoryService {
         &user_id: &ObjectId,
     ) -> Result<Vec<Category>, Error> {
         self.repository.get_all_user_categories(&user_id).await
+    }
+
+    pub async fn delete_user_category(
+        &self,
+        category_id: ObjectId,
+    ) -> Result<(), CategoryServiceError> {
+        let result = self.repository.get_category_by_id(&category_id).await;
+        println!("Result: {:?}", result);
+        if let Ok(Some(_category)) = result {
+            self.repository
+                .delete_category(category_id)
+                .await
+                .map_err(CategoryServiceError::DatabaseError)?;
+            Ok(())
+        } else {
+            Err(CategoryServiceError::CategoryNotFound)
+        }
     }
 }
