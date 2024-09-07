@@ -82,6 +82,14 @@ impl TaskRepository {
         Ok(tasks)
     }
 
+    pub async fn get_task_by_id(
+        &self,
+        &task_id: &ObjectId,
+    ) -> Result<Option<Task>, Error> {
+        let filter = doc! {"_id": task_id};
+        self.collection.find_one(filter).await
+    }
+
     pub async fn get_task_by_title(
         &self,
         &user_id: &ObjectId,
@@ -91,5 +99,5 @@ impl TaskRepository {
         let filter = doc! {"user_id": user_id, "category_id": category_id, "title": title};
         self.collection.find_one(filter).await
     }
-    
+
 }

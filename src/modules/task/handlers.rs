@@ -22,10 +22,8 @@ use super::service::{TaskService, TaskServiceError};
 async fn create_task(
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<AuthState>,
-    Json(mut payload): Json<CreateTaskRequest>,
+    Json(payload): Json<CreateTaskRequest>,
 ) -> impl IntoResponse {
-    payload.title = payload.title.trim().to_string();
-
     if let Err(errors) = payload.validate() {
         return ApiResponse::bad_request("Validation failed", Some(errors)).into_response();
     }
@@ -56,10 +54,8 @@ async fn update_task(
     Path(task_id): Path<ObjectId>,
     State(state): State<Arc<AppState>>,
     Extension(user): Extension<AuthState>,
-    Json(mut payload): Json<UpdateTaskRequest>,
+    Json(payload): Json<UpdateTaskRequest>,
 ) -> impl IntoResponse {
-    payload.title = payload.title.trim().to_string();
-
     if let Err(errors) = payload.validate() {
         return ApiResponse::bad_request("Validation failed", Some(errors)).into_response();
     }
@@ -74,6 +70,13 @@ async fn update_task(
         Ok(result) => {
             Json(ApiResponse::ok("Task updated successfully", Some(result))).into_response()
         }
+        Err(TaskServiceError::TaskNotFound) => ApiResponse::bad_request(
+            TaskServiceError::TaskNotFound
+                .to_string()
+                .as_str(),
+            None::<()>,
+        )
+        .into_response(),
         Err(TaskServiceError::TaskAlreadyExists) => ApiResponse::unprocessable_entity(
             TaskServiceError::TaskAlreadyExists
                 .to_string()
@@ -129,9 +132,36 @@ async fn get_tasks(
     }
 }
 
+async fn delete_task(
+    Path(task_id): Path<ObjectId>,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    let repository = TaskRepository::new(&state.mongodb);
+    let service = TaskService::new(repository);
+
+    match service
+        .delete_user_task(&task_id)
+        .await
+    {
+        Ok(result) => {
+            Json(ApiResponse::ok("Task deleted successfully", Some(result))).into_response()
+        }
+        Err(TaskServiceError::TaskNotFound) => ApiResponse::bad_request(
+            TaskServiceError::TaskNotFound
+                .to_string()
+                .as_str(),
+            None::<()>,
+        )
+        .into_response(),
+        Err(err) => {
+            ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()
+        }
+    }
+}
+
 pub fn handles() -> Router<Arc<AppState>> {
     Router::new()
         .route("/v1/tasks", post(create_task).get(get_tasks))
-        .route("/v1/tasks/:task_id", put(update_task))
+        .route("/v1/tasks/:task_id", put(update_task).delete(delete_task))
         .layer(middleware::from_fn(auth::middlewares::authorize))
 }

@@ -12,6 +12,9 @@ pub enum TaskServiceError {
     #[error("Task already exists")]
     TaskAlreadyExists,
 
+    #[error("Task not found")]
+    TaskNotFound,
+
     #[error("Database error occurred: {0}")]
     DatabaseError(#[from] Error),
 }
@@ -68,6 +71,10 @@ impl TaskService {
         user_id: &ObjectId,
         category_id: Option<ObjectId>,
     ) -> Result<bool, TaskServiceError> {
+        if self.repository.get_task_by_id(task_id).await?.is_none() {
+            return Err(TaskServiceError::TaskNotFound);
+        }
+        
         if let Some(_existing_task) = self
             .repository
             .get_task_by_title(user_id, &category_id.unwrap(), &title)
@@ -89,6 +96,19 @@ impl TaskService {
             status,
             category_id,
         ).await?;
+    
+        Ok(result)
+    }
+
+    pub async fn delete_user_task(
+        &self,
+        task_id: &ObjectId,
+    ) -> Result<bool, TaskServiceError> {
+        if self.repository.get_task_by_id(task_id).await?.is_none() {
+            return Err(TaskServiceError::TaskNotFound);
+        }
+
+        let result = self.repository.delete_task(task_id).await?;
     
         Ok(result)
     }
