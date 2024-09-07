@@ -1,10 +1,11 @@
 use axum::{
-    extract::{Json, State},
+    extract::{Json, Path, State},
     middleware,
     response::IntoResponse,
-    routing::post,
+    routing::{post, put},
     Extension, Router,
 };
+use mongodb::bson::oid::ObjectId;
 use std::sync::Arc;
 use validator::Validate;
 
@@ -14,7 +15,7 @@ use crate::{
     modules::auth::{self, dto::AuthState},
 };
 
-use super::dto::{TaskResponse, CreateTaskRequest};
+use super::dto::{CreateTaskRequest, TaskResponse, UpdateTaskRequest};
 use super::repository::TaskRepository;
 use super::service::{TaskService, TaskServiceError};
 
@@ -38,6 +39,41 @@ async fn create_task(
     {
         Ok(id) => ApiResponse::created("Task created successfully", Some(id.to_string()))
             .into_response(),
+        Err(TaskServiceError::TaskAlreadyExists) => ApiResponse::unprocessable_entity(
+            TaskServiceError::TaskAlreadyExists
+                .to_string()
+                .as_str(),
+            None::<()>,
+        )
+        .into_response(),
+        Err(err) => {
+            ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response()
+        }
+    }
+}
+
+async fn update_task(
+    Path(task_id): Path<ObjectId>,
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<AuthState>,
+    Json(mut payload): Json<UpdateTaskRequest>,
+) -> impl IntoResponse {
+    payload.title = payload.title.trim().to_string();
+
+    if let Err(errors) = payload.validate() {
+        return ApiResponse::bad_request("Validation failed", Some(errors)).into_response();
+    }
+
+    let repository = TaskRepository::new(&state.mongodb);
+    let service = TaskService::new(repository);
+
+    match service
+        .update_user_task(&task_id, payload.title.clone(), payload.description.clone(), payload.start_date, payload.end_date, payload.status, &user.id, payload.category_id)
+        .await
+    {
+        Ok(result) => {
+            Json(ApiResponse::ok("Task updated successfully", Some(result))).into_response()
+        }
         Err(TaskServiceError::TaskAlreadyExists) => ApiResponse::unprocessable_entity(
             TaskServiceError::TaskAlreadyExists
                 .to_string()
@@ -96,5 +132,6 @@ async fn get_tasks(
 pub fn handles() -> Router<Arc<AppState>> {
     Router::new()
         .route("/v1/tasks", post(create_task).get(get_tasks))
+        .route("/v1/tasks/:task_id", put(update_task))
         .layer(middleware::from_fn(auth::middlewares::authorize))
 }

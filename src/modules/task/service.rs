@@ -57,6 +57,42 @@ impl TaskService {
         Ok(result)
     }
 
+    pub async fn update_user_task(
+        &self,
+        task_id: &ObjectId,
+        title: String,
+        description: Option<String>,
+        start_date: Option<DateTime<Utc>>,
+        end_date: Option<DateTime<Utc>>,
+        status: Option<Status>,
+        user_id: &ObjectId,
+        category_id: Option<ObjectId>,
+    ) -> Result<bool, TaskServiceError> {
+        if let Some(_existing_task) = self
+            .repository
+            .get_task_by_title(user_id, &category_id.unwrap(), &title)
+            .await?
+        {
+            if let Some(existing_task_id) = _existing_task.id {
+                if existing_task_id != *task_id {
+                    return Err(TaskServiceError::TaskAlreadyExists);
+                }
+            }
+        }
+    
+        let result = self.repository.update_task(
+            task_id,
+            title,
+            description,
+            start_date,
+            end_date,
+            status,
+            category_id,
+        ).await?;
+    
+        Ok(result)
+    }
+
     pub async fn get_all_user_tasks(
         &self,
         &user_id: &ObjectId,

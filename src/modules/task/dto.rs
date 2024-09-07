@@ -23,6 +23,22 @@ pub struct CreateTaskRequest {
     pub category_id: ObjectId
 }
 
+#[derive(Deserialize, Validate)]
+pub struct UpdateTaskRequest {
+    #[validate(length(min = 1, max = 30))]
+    pub title: String,
+    #[validate(length(min = 1, max = 100))]
+    pub description: Option<String>,
+    #[allow(dead_code)]
+    pub start_date: Option<DateTime<Utc>>,
+    #[allow(dead_code)]
+    pub end_date: Option<DateTime<Utc>>,
+    #[allow(dead_code)]
+    pub status: Option<Status>,
+    #[allow(dead_code)]
+    pub category_id: Option<ObjectId>
+}
+
 #[derive(Serialize)]
 pub struct TaskResponse {
     pub _id: String,
