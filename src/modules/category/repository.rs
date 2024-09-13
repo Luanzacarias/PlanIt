@@ -41,6 +41,7 @@ impl CategoryRepository {
 
         Ok(categories)
     }
+
     pub async fn get_category_by_title(
         &self,
         &user_id: &ObjectId,
@@ -49,4 +50,5 @@ impl CategoryRepository {
         let filter = doc! {"user_id": user_id, "title": title};
         self.collection.find_one(filter).await
     }
+
 }

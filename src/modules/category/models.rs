@@ -2,7 +2,7 @@ use crate::helpers::object_id_helper::{deserialize_option_object_id, serialize_o
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Color {
     #[serde(rename = "ORANGE")]
     Orange,
