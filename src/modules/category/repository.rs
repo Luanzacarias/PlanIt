@@ -51,13 +51,4 @@ impl CategoryRepository {
         self.collection.find_one(filter).await
     }
 
-    pub async fn get_category_by_id(
-        &self,
-        &user_id: &ObjectId,
-        &category_id: &ObjectId,
-    ) -> Result<Option<Category>, Error> {
-        let filter = doc! {"_id": category_id, "user_id": user_id};
-        self.collection.find_one(filter).await
-    }
-
 }

@@ -103,28 +103,33 @@ async fn get_tasks(
         Ok(tasks) => {
             let mut response_tasks = Vec::new();
 
-            for task in tasks {
-                let category_result = category_repository.get_category_by_id(&user.id, &task.category_id).await;
+                let category_result = category_repository.get_all_user_categories(&user.id).await;
 
-                let category_response = match category_result {
-                    Ok(Some(category)) => Some(CategoryResponse {
-                        _id: category.id.unwrap().to_string(),
-                        title: category.title,
-                        color: category.color,
-                    }),
-                    _ => None,
+                let categories = match category_result {
+                    Ok(cats) => cats,
+                    Err(_) => Vec::new(),
                 };
 
-                response_tasks.push(TaskResponse {
-                    _id: task.id.unwrap().to_string(),
-                    title: task.title,
-                    description: task.description,
-                    start_date: task.start_date,
-                    end_date: task.end_date,
-                    status: task.status,
-                    category: category_response,
-                });
-            }
+                for task in tasks {
+                    let category_response = categories.iter().find(|cat| cat.id == Some(task.category_id)).map(|category| {
+                        CategoryResponse {
+                            _id: category.id.unwrap().to_string(),
+                            title: category.title.clone(),
+                            color: category.color.clone()
+                        }
+                    });
+
+                    response_tasks.push(TaskResponse {
+                        _id: task.id.unwrap().to_string(),
+                        title: task.title,
+                        description: task.description,
+                        start_date: task.start_date,
+                        end_date: task.end_date,
+                        status: task.status,
+                        category: category_response,
+                    });
+                }
+
 
             Json(ApiResponse::ok("Tasks retrieved successfully", Some(response_tasks))).into_response()
         }
