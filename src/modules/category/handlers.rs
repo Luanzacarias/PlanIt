@@ -5,6 +5,7 @@ use axum::{
     response::IntoResponse,
     routing::delete,
     routing::post,
+    routing::put,
     Extension, Router,
 };
 use mongodb::bson::oid::ObjectId;
@@ -27,12 +28,13 @@ use super::{
 async fn delete_category(
     State(state): State<Arc<AppState>>,
     Path(category_id): Path<String>,
+    Extension(user): Extension<AuthState>,
 ) -> impl IntoResponse {
     let repository = CategoryRepository::new(&state.mongodb);
     let service = CategoryService::new(repository);
 
     let category_id = ObjectId::parse_str(&category_id).expect("Invalid ObjectId");
-    match service.delete_user_category(category_id).await {
+    match service.delete_user_category(category_id, &user.id).await {
         Ok(_) => ApiResponse::ok("Category deleted successfully", None::<()>).into_response(),
         Err(err) => ApiResponse::server_error(
             Some(format!("Failed to delete category: {}", err).as_str()),
@@ -78,6 +80,7 @@ async fn create_category(
 async fn update_category(
     State(state): State<Arc<AppState>>,
     Path(category_id): Path<String>,
+    Extension(user): Extension<AuthState>,
     Json(payload): Json<UpdateCategoryRequest>,
 ) -> impl IntoResponse {
     let repository = CategoryRepository::new(&state.mongodb);
@@ -90,7 +93,7 @@ async fn update_category(
     }
 
     match service
-        .update_category(category_id, payload.title, payload.color)
+        .update_category(&user.id, category_id, payload.title, payload.color)
         .await
     {
         Ok(_) => ApiResponse::ok("Category updated successfully", None::<()>).into_response(),

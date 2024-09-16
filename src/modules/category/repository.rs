@@ -1,3 +1,4 @@
+use crate::category::models::Color;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
 use mongodb::{bson::doc, Collection, Database};
@@ -26,12 +27,13 @@ impl CategoryRepository {
     pub async fn update_category(
         &self,
         id: ObjectId,
-        updated_category: Category,
+        title: String,
+        color: Color,
     ) -> Result<(), Error> {
         let filter = doc! { "_id": id };
         let update = doc! { "$set": {
-            "title": updated_category.title,
-            "color": updated_category.color.as_str(),
+            "title": title,
+            "color": color.as_str(),
         } };
 
         self.collection.update_one(filter, update).await?;
@@ -73,9 +75,13 @@ impl CategoryRepository {
 
     pub async fn get_category_by_id(
         &self,
+        user_id: &ObjectId,
         category_id: &ObjectId,
     ) -> Result<Option<Category>, Error> {
-        let filter = doc! {"_id": category_id};
+        let filter = doc! {
+            "_id": category_id,
+            "user_id": user_id
+        };
         self.collection.find_one(filter).await
     }
 }

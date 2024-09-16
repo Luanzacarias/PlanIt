@@ -55,29 +55,16 @@ impl CategoryService {
 
     pub async fn update_category(
         &self,
+        user_id: &ObjectId,
         id: ObjectId,
         title: String,
         color: Color,
     ) -> Result<(), CategoryServiceError> {
-        if let None = self.repository.get_category_by_id(&id).await? {
+        if let None = self.repository.get_category_by_id(user_id, &id).await? {
             return Err(CategoryServiceError::CategoryNotFound);
         }
 
-        let updated_category = Category {
-            id: Some(id),
-            user_id: self
-                .repository
-                .get_category_by_id(&id)
-                .await?
-                .unwrap()
-                .user_id,
-            title,
-            color,
-        };
-
-        self.repository
-            .update_category(id, updated_category)
-            .await?;
+        self.repository.update_category(id, title, color).await?;
         Ok(())
     }
 
@@ -91,8 +78,12 @@ impl CategoryService {
     pub async fn delete_user_category(
         &self,
         category_id: ObjectId,
+        user_id: &ObjectId,
     ) -> Result<(), CategoryServiceError> {
-        let result = self.repository.get_category_by_id(&category_id).await;
+        let result = self
+            .repository
+            .get_category_by_id(user_id,&category_id)
+            .await;
         if let Ok(Some(_category)) = result {
             self.repository
                 .delete_category(category_id)
