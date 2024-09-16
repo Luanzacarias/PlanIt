@@ -66,7 +66,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"teste\",\n    \"color\": \"ORANGE\"\n}"
+							"raw": "{\n    \"title\": \"teste\",\n    \"color\": \"ORANGE\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{url}}/{{version}}/{{categories}}",
@@ -143,6 +148,167 @@
 								"{{version}}",
 								"{{categories}}",
 								"{{categoryId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Get all",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/{{version}}/{{tasks}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"{{version}}",
+								"{{tasks}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"test 3\",\n    \"description\": \"My third task\",\n    \"start_date\": \"2023-09-02T12:34:56Z\",\n    \"end_date\": \"2023-09-03T12:34:56Z\",\n    \"status\": \"EXECUTADA\",\n    \"category_id\":  \"66d65555db72191ac8681eb5\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/{{version}}/{{tasks}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"{{version}}",
+								"{{tasks}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"test 2\",\n    \"description\": \"My second task\",\n    \"start_date\": \"2023-09-02T12:34:56Z\",\n    \"end_date\": \"2025-09-03T12:34:56Z\",\n    \"status\": \"EXECUTADA\",\n    \"category_id\":  \"66d65555db72191ac8681eb5\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/{{version}}/{{tasks}}/66dcc2df5bbeda038c156852",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"{{version}}",
+								"{{tasks}}",
+								"66dcc2df5bbeda038c156852"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/{{version}}/{{tasks}}/66dcc517d61cc4377c3f30a0",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"{{version}}",
+								"{{tasks}}",
+								"66dcc517d61cc4377c3f30a0"
 							]
 						}
 					},

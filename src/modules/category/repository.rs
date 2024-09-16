@@ -64,6 +64,7 @@ impl CategoryRepository {
 
         Ok(categories)
     }
+
     pub async fn get_category_by_title(
         &self,
         &user_id: &ObjectId,
