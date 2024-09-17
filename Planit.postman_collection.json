@@ -31,13 +31,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/{{version}}/{{categories}}",
+							"raw": "{{url}}/{{version}}/categories",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"{{version}}",
-								"{{categories}}"
+								"categories"
 							]
 						}
 					},
@@ -81,6 +81,73 @@
 							"path": [
 								"{{version}}",
 								"{{categories}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/{{version}}/{{categories}}/{{categoryId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"{{version}}",
+								"{{categories}}",
+								"{{categoryId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Category",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"title\": \"MUDOU!\",\r\n    \"color\": \"YELLOW\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/{{version}}/{{categories}}/{{categoryId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"{{version}}",
+								"{{categories}}",
+								"{{categoryId}}"
 							]
 						}
 					},

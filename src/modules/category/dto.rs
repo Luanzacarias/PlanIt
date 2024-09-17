@@ -9,7 +9,12 @@ pub struct CreateCategoryRequest {
     pub title: String,
     pub color: Color,
 }
-
+#[derive(Deserialize, Validate)]
+pub struct UpdateCategoryRequest {
+    #[validate(length(min = 1, max = 30))]
+    pub title: String,
+    pub color: Color,
+}
 #[derive(Serialize)]
 pub struct CategoryResponse {
     pub _id: String,

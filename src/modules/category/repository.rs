@@ -1,3 +1,4 @@
+use crate::category::models::Color;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
 use mongodb::{bson::doc, Collection, Database};
@@ -21,6 +22,28 @@ impl CategoryRepository {
         let result = self.collection.insert_one(new_category).await?;
         let id = result.inserted_id.as_object_id().unwrap();
         Ok(id)
+    }
+
+    pub async fn update_category(
+        &self,
+        id: ObjectId,
+        title: String,
+        color: Color,
+    ) -> Result<(), Error> {
+        let filter = doc! { "_id": id };
+        let update = doc! { "$set": {
+            "title": title,
+            "color": color.as_str(),
+        } };
+
+        self.collection.update_one(filter, update).await?;
+        Ok(())
+    }
+
+    pub async fn delete_category(&self, category_id: ObjectId) -> Result<(), Error> {
+        let filter = doc! {"_id": category_id};
+        self.collection.delete_one(filter).await?;
+        Ok(())
     }
 
     pub async fn get_all_user_categories(
@@ -51,4 +74,15 @@ impl CategoryRepository {
         self.collection.find_one(filter).await
     }
 
+    pub async fn get_category_by_id(
+        &self,
+        user_id: &ObjectId,
+        category_id: &ObjectId,
+    ) -> Result<Option<Category>, Error> {
+        let filter = doc! {
+            "_id": category_id,
+            "user_id": user_id
+        };
+        self.collection.find_one(filter).await
+    }
 }
