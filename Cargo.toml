@@ -4,16 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.7.5"
-mongodb = "3.0.1"
+axum = "0.7.6"
+mongodb = "3.1.0"
 dotenv = "0.15.0"
 env_logger = "0.11.5"
-tokio = "1.39.2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+tokio = "1.40.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
 log = "0.4.22"
-validator = { version = "0.16", features = ["derive"] }
-thiserror = "1.0.63"
+validator = { version = "0.18.1", features = ["derive"] }
+thiserror = "1.0.64"
 jsonwebtoken = "9.3.0"
 chrono = { version = "0.4.38", features = ["serde"] }
-tower-http = { version = "0.5.2", features = ["cors"] }
+tower-http = { version = "0.6.0", features = ["cors"] }
+futures = "0.3.30"
