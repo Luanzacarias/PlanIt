@@ -1,5 +1,4 @@
 use crate::modules::notification::models::Notification;
-
 use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Bson;
@@ -119,4 +118,26 @@ impl TaskRepository {
         self.collection.find_one(filter).await
     }
 
+    pub async fn get_all_not_sent_notifications(&self, greater_than: DateTime<Utc>, last_than_or_equals: DateTime<Utc>) -> Result<Vec<Task>, Error> {
+        let filter = doc! {
+            "notification.scheduled_time": { "$gte": greater_than.to_rfc3339()},
+            "notification.sent": false
+        };
+
+        let mut cursor = self.collection.find(filter).await?;
+        let mut tasks = Vec::new();
+        while cursor.advance().await? {
+            tasks.push(cursor.deserialize_current()?);
+        }
+
+        Ok(tasks)
+    }
+
+    pub async fn mark_notification_as_sent(&self, task_id: &ObjectId) -> Result<bool, Error> {
+        let filter = doc! { "_id": task_id, "notification.sent": false };
+        let update = doc! { "$set": { "notification.sent": true } };
+        let result = self.collection.update_one(filter, update).await?;
+
+        Ok(result.modified_count > 0)
+    }
 }

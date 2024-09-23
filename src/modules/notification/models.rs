@@ -32,4 +32,6 @@ pub struct Notification {
     pub time_value: u16,
     pub scheduled_time: DateTime<Utc>,
     pub sent: bool,
+    #[serde(default)]
+    pub viewed: bool,
 }

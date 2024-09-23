@@ -53,14 +53,13 @@ impl TaskService {
                     id: ObjectId::new(),
                     sent: false,
                     scheduled_time: match task_data.notification_time_unit {
-                        Some(TimeUnit::Minute) => {
-                            task_data.start_date - Duration::minutes(time_value)
-                        }
+                        Some(TimeUnit::Minute) => task_data.start_date - Duration::minutes(time_value),
                         Some(TimeUnit::Hour) => task_data.start_date - Duration::hours(time_value),
                         None => task_data.start_date,
                     },
                     time_unit: task_data.notification_time_unit.unwrap(),
                     time_value: task_data.notification_time_value.unwrap(),
+                    viewed: false,
                 })
             }
         };
@@ -118,6 +117,7 @@ impl TaskService {
                     time_value: time_value as u16,
                     scheduled_time,
                     sent: false,
+                    viewed: false,
                 }))
             },
             (Some(None), Some(None)) => Some(None), // Remove notification
