@@ -1,17 +1,16 @@
-use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
-use mongodb::Collection;
-use futures::stream::StreamExt;
-use chrono::{DateTime, SecondsFormat, Utc};
-
-use super::models::{Goal, Priority, Status};
+use mongodb::{bson::doc, Collection, Database};
+use chrono::{DateTime, Utc};
+use futures::StreamExt;
+use super::models::{Goal, Priority};
 
 pub struct GoalRepository {
     collection: Collection<Goal>,
 }
 
 impl GoalRepository {
-    pub fn new(db: &mongodb::Database) -> Self {
+    pub fn new(db: &Database) -> Self {
         let collection = db.collection("goals");
         GoalRepository { collection }
     }
@@ -27,9 +26,9 @@ impl GoalRepository {
         id: ObjectId,
         title: Option<String>,
         description: Option<String>,
+        start_date: Option<DateTime<Utc>>,
         end_date: Option<DateTime<Utc>>,
         priority: Option<Priority>,
-        status: Option<Status>,
     ) -> Result<bool, Error> {
         let filter = doc! { "_id": id };
         let mut update_doc = doc! {};
@@ -40,14 +39,14 @@ impl GoalRepository {
         if let Some(description) = description {
             update_doc.insert("description", description);
         }
+        if let Some(start_date) = start_date {
+            update_doc.insert("start_date", start_date.to_rfc3339());
+        }
         if let Some(end_date) = end_date {
-            update_doc.insert("end_date", end_date.to_rfc3339_opts(SecondsFormat::Secs, true));
+            update_doc.insert("end_date", end_date.to_rfc3339());
         }
         if let Some(priority) = priority {
             update_doc.insert("priority", priority.as_str());
-        }
-        if let Some(status) = status {
-            update_doc.insert("status", status.as_str());
         }
 
         let update = doc! { "$set": update_doc };
@@ -87,19 +86,5 @@ impl GoalRepository {
     pub async fn get_goal_by_title(&self, user_id: &ObjectId, title: &str) -> Result<Option<Goal>, Error> {
         let filter = doc! { "user_id": user_id, "title": title };
         self.collection.find_one(filter).await
-    }
-
-    pub async fn get_all_goals(&self) -> Result<Vec<Goal>, Error> {
-        let mut cursor = self.collection.find(doc! {}).await?;
-        let mut goals: Vec<Goal> = Vec::new();
-
-        while let Some(result) = cursor.next().await {
-            match result {
-                Ok(goal) => goals.push(goal),
-                Err(e) => return Err(e),
-            }
-        }
-
-        Ok(goals)
     }
 }
