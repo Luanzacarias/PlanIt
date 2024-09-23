@@ -79,8 +79,8 @@ impl GoalRepository {
         Ok(goals)
     }
 
-    pub async fn get_goal_by_id(&self, user_id: &ObjectId, goal_id: &ObjectId) -> Result<Option<Goal>, Error> {
-        let filter = doc! { "_id": goal_id, "user_id": user_id };
+    pub async fn get_goal_by_id(&self, goal_id: &ObjectId) -> Result<Option<Goal>, Error> {
+        let filter = doc! { "_id": goal_id };
         self.collection.find_one(filter).await
     }
 

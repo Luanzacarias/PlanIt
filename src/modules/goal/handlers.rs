@@ -42,7 +42,7 @@ async fn get_goal(
     let repository = GoalRepository::new(&state.mongodb);
     let service = GoalService::new(repository);
 
-    match service.get_goal_by_id(&state.user_id, &goal_id).await {
+    match service.get_goal_by_id(&goal_id).await {
         Ok(Some(goal)) => ApiResponse::ok("Goal retrieved successfully", Some(goal)).into_response(),
         Ok(None) => ApiResponse::not_found("Goal not found").into_response(),
         Err(err) => ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response(),
@@ -75,7 +75,7 @@ async fn delete_goal(
     let repository = GoalRepository::new(&state.mongodb);
     let service = GoalService::new(repository);
 
-    match service.delete_user_goal(goal_id, &state.user_id).await {
+    match service.delete_user_goal(goal_id).await {
         Ok(_) => ApiResponse::ok("Goal deleted successfully", None::<()>).into_response(),
         Err(GoalServiceError::GoalNotFound) => ApiResponse::not_found("Goal not found").into_response(),
         Err(err) => ApiResponse::server_error(Some(err.to_string().as_str()), None::<()>).into_response(),

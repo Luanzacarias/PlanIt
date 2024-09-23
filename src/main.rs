@@ -12,13 +12,11 @@ use std::env;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
-use mongodb::bson::oid::ObjectId;
 
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 
 struct AppState {
     mongodb: Database,
-    user_id: ObjectId,
 }
 
 #[tokio::main]
@@ -29,9 +27,7 @@ async fn main() {
     let app_host: String = env::var("APP_HOST").unwrap_or_else(|_| String::from("127.0.0.1:8080"));
     let mongodb = config::mongodb::get_database().await;
 
-    let user_id = ObjectId::new();
-
-    let state = Arc::new(AppState { mongodb, user_id });
+    let state = Arc::new(AppState { mongodb });
     let app = Router::new()
         .route(
             "/",

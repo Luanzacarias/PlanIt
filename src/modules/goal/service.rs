@@ -66,7 +66,7 @@ impl GoalService {
         id: ObjectId,
         request: UpdateGoalRequest,
     ) -> Result<GoalResponse, GoalServiceError> {
-        if self.repository.get_goal_by_id(&request.user_id, &id).await?.is_none() {
+        if self.repository.get_goal_by_id(&request.user_id).await?.is_none() {
             return Err(GoalServiceError::GoalNotFound);
         }
 
@@ -79,7 +79,7 @@ impl GoalService {
             request.status.clone(),
         ).await?;
 
-        let updated_goal = self.repository.get_goal_by_id(&request.user_id, &id).await?.unwrap();
+        let updated_goal = self.repository.get_goal_by_id(&request.user_id).await?.unwrap();
         Ok(GoalResponse {
             _id: updated_goal.id.unwrap().to_hex(),
             title: updated_goal.title,
@@ -93,11 +93,10 @@ impl GoalService {
     pub async fn delete_user_goal(
         &self,
         goal_id: ObjectId,
-        user_id: &ObjectId,
     ) -> Result<(), GoalServiceError> {
         let result = self
             .repository
-            .get_goal_by_id(user_id, &goal_id)
+            .get_goal_by_id(&goal_id)
             .await;
         if let Ok(Some(_goal)) = result {
             self.repository.delete_goal(goal_id).await?;
@@ -136,9 +135,8 @@ impl GoalService {
 
     pub async fn get_goal_by_id(
         &self,
-        user_id: &ObjectId,
         goal_id: &ObjectId,
     ) -> Result<Option<Goal>, GoalServiceError> {
-        self.repository.get_goal_by_id(user_id, goal_id).await.map_err(GoalServiceError::DatabaseError)
+        self.repository.get_goal_by_id(goal_id).await.map_err(GoalServiceError::DatabaseError)
     }
 }
