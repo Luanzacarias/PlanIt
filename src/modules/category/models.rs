@@ -10,6 +10,10 @@ pub enum Color {
     Yellow,
     #[serde(rename = "GREEN")]
     Green,
+    #[serde(rename = "RED")]
+    Red,
+    #[serde(rename = "PURPLE")]
+    Purple,
 }
 
 impl Color {
@@ -18,6 +22,8 @@ impl Color {
             Color::Orange => "ORANGE",
             Color::Yellow => "YELLOW",
             Color::Green => "GREEN",
+            Color::Red => "RED",
+            Color::Purple => "PURPLE",
         }
     }
 }

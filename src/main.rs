@@ -6,7 +6,7 @@ use axum::{extract::Json, routing::get, Router};
 use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
-use modules::{auth, category, task, user};
+use modules::{auth, category, notification, goal, task::{self, repository::TaskRepository}, user};
 use mongodb::Database;
 use std::env;
 use std::sync::Arc;
@@ -36,7 +36,9 @@ async fn main() {
         .nest("/", auth::handles())
         .nest("/", user::handles())
         .nest("/", category::handles())
+        .nest("/", goal::handles())
         .nest("/", task::handles())
+        .nest("/", notification::handles())
         .layer(CorsLayer::permissive())
         .with_state(state);
 
@@ -45,6 +47,11 @@ async fn main() {
         .expect("Unable to connect to the server");
 
     info!("Web Server running at {}", listener.local_addr().unwrap());
+
+    tokio::spawn(async {
+        let task_repository = TaskRepository::new(&config::mongodb::get_database().await);
+        notification::scheduler::boot(&task_repository).await;
+    });
 
     axum::serve(listener, app)
         .await

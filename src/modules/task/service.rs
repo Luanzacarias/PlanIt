@@ -1,12 +1,13 @@
-use chrono::{DateTime, Utc};
+use crate::modules::notification::models::{Notification, TimeUnit};
+
+use chrono::Duration;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
-
 use thiserror::Error;
 
+use super::dto::{CreateTaskRequest, UpdateTaskRequest};
 use super::models::{Status, Task, TaskStatsByCategory};
 use super::repository::TaskRepository;
-use std::collections::HashMap;
 
 #[derive(Error, Debug)]
 pub enum TaskServiceError {
@@ -31,30 +32,48 @@ impl TaskService {
 
     pub async fn create_task_for_user(
         &self,
-        title: String,
-        description: String,
-        start_date: DateTime<Utc>,
-        end_date: DateTime<Utc>,
-        status: Status,
         &user_id: &ObjectId,
-        &category_id: &ObjectId,
+        task_data: CreateTaskRequest,
     ) -> Result<ObjectId, TaskServiceError> {
         if let Some(_existing_task) = self
             .repository
-            .get_task_by_title(&user_id, &category_id, &title)
+            .get_task_by_title(&user_id, &task_data.title)
             .await?
         {
             return Err(TaskServiceError::TaskAlreadyExists);
         }
+
+        let notification: Option<Notification> = {
+            if task_data.notification_time_unit.is_none() || task_data.notification_time_value.is_none()
+            {
+                None
+            } else {
+                let time_value = task_data.notification_time_value.unwrap() as i64;
+                Some(Notification {
+                    id: ObjectId::new(),
+                    sent: false,
+                    scheduled_time: match task_data.notification_time_unit {
+                        Some(TimeUnit::Minute) => task_data.start_date - Duration::minutes(time_value),
+                        Some(TimeUnit::Hour) => task_data.start_date - Duration::hours(time_value),
+                        None => task_data.start_date,
+                    },
+                    time_unit: task_data.notification_time_unit.unwrap(),
+                    time_value: task_data.notification_time_value.unwrap(),
+                    viewed: false,
+                })
+            }
+        };
+
         let new_task = Task {
             id: None,
-            title,
-            description,
-            start_date,
-            end_date,
-            status,
+            title: task_data.title,
+            description: task_data.description,
+            start_date: task_data.start_date,
+            end_date: task_data.end_date,
+            status: task_data.status,
             user_id,
-            category_id,
+            category_id: task_data.category_id,
+            notification,
         };
 
         let result = self.repository.create_task(new_task).await?;
@@ -63,47 +82,65 @@ impl TaskService {
 
     pub async fn update_user_task(
         &self,
+        &user_id: &ObjectId,
         task_id: &ObjectId,
-        title: String,
-        description: Option<String>,
-        start_date: Option<DateTime<Utc>>,
-        end_date: Option<DateTime<Utc>>,
-        status: Option<Status>,
-        user_id: &ObjectId,
-        category_id: Option<ObjectId>,
+        task_data: UpdateTaskRequest,
     ) -> Result<bool, TaskServiceError> {
-        if self.repository.get_task_by_id(task_id).await?.is_none() {
+        let old_data = self.repository.get_task_by_id(task_id).await?;
+        if old_data.is_none() {
             return Err(TaskServiceError::TaskNotFound);
         }
-
-        if let Some(_existing_task) = self
-            .repository
-            .get_task_by_title(user_id, &category_id.unwrap(), &title)
-            .await?
-        {
-            if let Some(existing_task_id) = _existing_task.id {
-                if existing_task_id != *task_id {
+    
+        if let Some(title) = &task_data.title {
+            if let Some(existing_task) = self
+                .repository
+                .get_task_by_title(&user_id, title)
+                .await?
+            {
+                if existing_task.id.as_ref() != Some(task_id) {
                     return Err(TaskServiceError::TaskAlreadyExists);
                 }
             }
         }
 
+        let notification = match (task_data.notification_time_unit, task_data.notification_time_value) {
+            (Some(Some(time_unit)), Some(Some(time_value))) => { // existi and has value
+                let time_value = time_value as i64;
+                let start_date = task_data.start_date.or(Some(old_data.unwrap().start_date)).unwrap();
+                let scheduled_time = match time_unit {
+                    TimeUnit::Minute => start_date - Duration::minutes(time_value),
+                    TimeUnit::Hour => start_date - Duration::hours(time_value),
+                };
+                Some(Some(Notification {
+                    id: ObjectId::new(),
+                    time_unit,
+                    time_value: time_value as u16,
+                    scheduled_time,
+                    sent: false,
+                    viewed: false,
+                }))
+            },
+            (Some(None), Some(None)) => Some(None), // Remove notification
+            _ => None,
+        };
+    
         let result = self
             .repository
             .update_task(
                 task_id,
-                title,
-                description,
-                start_date,
-                end_date,
-                status,
-                category_id,
+                task_data.title,
+                task_data.description,
+                task_data.start_date,
+                task_data.end_date,
+                task_data.status,
+                task_data.category_id,
+                notification,
             )
             .await?;
-
+    
         Ok(result)
     }
-
+    
     pub async fn delete_user_task(&self, task_id: &ObjectId) -> Result<bool, TaskServiceError> {
         if self.repository.get_task_by_id(task_id).await?.is_none() {
             return Err(TaskServiceError::TaskNotFound);

@@ -39,6 +39,7 @@ pub struct Task {
     pub status: Status,
     pub user_id: ObjectId,
     pub category_id: ObjectId,
+    pub notification: Option<crate::modules::notification::models::Notification>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -47,6 +48,7 @@ pub struct TaskByCategoryAndStatus {
     pub status: String,
     pub count: i32,
 }
+
 #[derive(Serialize, Deserialize)]
 pub struct TaskStatsByCategory {
     pub category: String,

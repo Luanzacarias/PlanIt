@@ -1,4 +1,6 @@
 pub mod auth;
 pub mod category;
-pub mod task;
+pub mod goal;
 pub mod user;
+pub mod task;
+pub mod notification;

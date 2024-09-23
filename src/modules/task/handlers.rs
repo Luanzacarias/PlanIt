@@ -1,22 +1,20 @@
+use crate::{
+    helpers::api_response::ApiResponse,
+    modules::auth::{self, dto::AuthState},
+    modules::category::{dto::CategoryResponse, repository::CategoryRepository},
+    AppState,
+};
+
 use axum::{
     extract::{Json, Path, State},
     middleware,
     response::IntoResponse,
-    routing::{get, post, put},
+    routing::{post, put},
     Extension, Router,
 };
 use mongodb::bson::oid::ObjectId;
 use std::sync::Arc;
 use validator::Validate;
-
-use crate::{
-    helpers::api_response::ApiResponse,
-    modules::auth::{self, dto::AuthState},
-};
-use crate::{
-    modules::category::{dto::CategoryResponse, repository::CategoryRepository},
-    AppState,
-};
 
 use super::dto::{CreateTaskRequest, TaskResponse, UpdateTaskRequest};
 use super::repository::TaskRepository;
@@ -34,18 +32,7 @@ async fn create_task(
     let repository = TaskRepository::new(&state.mongodb);
     let service = TaskService::new(repository);
 
-    match service
-        .create_task_for_user(
-            payload.title.clone(),
-            payload.description.clone(),
-            payload.start_date.clone(),
-            payload.end_date.clone(),
-            payload.status,
-            &user.id,
-            &payload.category_id,
-        )
-        .await
-    {
+    match service.create_task_for_user(&user.id, payload).await {
         Ok(id) => {
             ApiResponse::created("Task created successfully", Some(id.to_string())).into_response()
         }
@@ -75,14 +62,9 @@ async fn update_task(
 
     match service
         .update_user_task(
-            &task_id,
-            payload.title.clone(),
-            payload.description.clone(),
-            payload.start_date,
-            payload.end_date,
-            payload.status,
             &user.id,
-            payload.category_id,
+            &task_id,
+            payload,
         )
         .await
     {
@@ -143,6 +125,8 @@ async fn get_tasks(
                     end_date: task.end_date,
                     status: task.status,
                     category: category_response,
+                    notification_time_unit: task.notification.as_ref().map(|n| n.time_unit.clone()),
+                    notification_time_value: task.notification.as_ref().map(|n| n.time_value),
                 });
             }
 

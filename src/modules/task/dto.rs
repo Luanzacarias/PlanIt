@@ -1,9 +1,9 @@
+use crate::modules::{category::dto::CategoryResponse, notification::models::TimeUnit};
+
 use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-
-use crate::modules::category::dto::CategoryResponse;
 
 use super::models::Status;
 
@@ -20,13 +20,15 @@ pub struct CreateTaskRequest {
     #[allow(dead_code)]
     pub status: Status,
     #[allow(dead_code)]
-    pub category_id: ObjectId
+    pub category_id: ObjectId,
+    pub notification_time_unit: Option<TimeUnit>,
+    pub notification_time_value: Option<u16>,
 }
 
 #[derive(Deserialize, Validate)]
 pub struct UpdateTaskRequest {
     #[validate(length(min = 1, max = 30))]
-    pub title: String,
+    pub title: Option<String>,
     #[validate(length(min = 1, max = 100))]
     pub description: Option<String>,
     #[allow(dead_code)]
@@ -36,7 +38,9 @@ pub struct UpdateTaskRequest {
     #[allow(dead_code)]
     pub status: Option<Status>,
     #[allow(dead_code)]
-    pub category_id: Option<ObjectId>
+    pub category_id: Option<ObjectId>,
+    pub notification_time_unit: Option<Option<TimeUnit>>,
+    pub notification_time_value: Option<Option<u16>>,
 }
 
 #[derive(Serialize)]
@@ -47,5 +51,7 @@ pub struct TaskResponse {
     pub start_date: DateTime<Utc>,
     pub end_date: DateTime<Utc>,
     pub status: Status,
-    pub category: Option<CategoryResponse>
+    pub category: Option<CategoryResponse>,
+    pub notification_time_unit: Option<TimeUnit>,
+    pub notification_time_value: Option<u16>,
 }
