@@ -1,12 +1,13 @@
 use crate::modules::notification::models::{Notification, TimeUnit};
 
+use std::collections::HashMap;
 use chrono::Duration;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error;
 use thiserror::Error;
 
 use super::dto::{CreateTaskRequest, UpdateTaskRequest};
-use super::models::{Status, Task, TaskStatsByCategory};
+use super::models::{Task, TaskStatsByCategory};
 use super::repository::TaskRepository;
 
 #[derive(Error, Debug)]

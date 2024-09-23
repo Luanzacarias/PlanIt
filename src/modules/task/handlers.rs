@@ -9,7 +9,7 @@ use axum::{
     extract::{Json, Path, State},
     middleware,
     response::IntoResponse,
-    routing::{post, put},
+    routing::{get, post, put},
     Extension, Router,
 };
 use mongodb::bson::oid::ObjectId;
