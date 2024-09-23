@@ -4,8 +4,9 @@ use mongodb::error::Error;
 
 use thiserror::Error;
 
-use super::models::{Task, Status};
+use super::models::{Status, Task, TaskStatsByCategory};
 use super::repository::TaskRepository;
+use std::collections::HashMap;
 
 #[derive(Error, Debug)]
 pub enum TaskServiceError {
@@ -74,7 +75,7 @@ impl TaskService {
         if self.repository.get_task_by_id(task_id).await?.is_none() {
             return Err(TaskServiceError::TaskNotFound);
         }
-        
+
         if let Some(_existing_task) = self
             .repository
             .get_task_by_title(user_id, &category_id.unwrap(), &title)
@@ -86,37 +87,65 @@ impl TaskService {
                 }
             }
         }
-    
-        let result = self.repository.update_task(
-            task_id,
-            title,
-            description,
-            start_date,
-            end_date,
-            status,
-            category_id,
-        ).await?;
-    
+
+        let result = self
+            .repository
+            .update_task(
+                task_id,
+                title,
+                description,
+                start_date,
+                end_date,
+                status,
+                category_id,
+            )
+            .await?;
+
         Ok(result)
     }
 
-    pub async fn delete_user_task(
-        &self,
-        task_id: &ObjectId,
-    ) -> Result<bool, TaskServiceError> {
+    pub async fn delete_user_task(&self, task_id: &ObjectId) -> Result<bool, TaskServiceError> {
         if self.repository.get_task_by_id(task_id).await?.is_none() {
             return Err(TaskServiceError::TaskNotFound);
         }
 
         let result = self.repository.delete_task(task_id).await?;
-    
+
         Ok(result)
     }
 
-    pub async fn get_all_user_tasks(
-        &self,
-        &user_id: &ObjectId,
-    ) -> Result<Vec<Task>, Error> {
+    pub async fn get_all_user_tasks(&self, &user_id: &ObjectId) -> Result<Vec<Task>, Error> {
         self.repository.get_all_user_tasks(&user_id).await
+    }
+
+    pub async fn count_tasks_by_category_and_status(
+        &self,
+        user_id: &ObjectId,
+    ) -> Result<Vec<TaskStatsByCategory>, Error> {
+        let task_stats = self.repository.count_tasks_by_status(user_id).await?;
+
+        let mut category_map: HashMap<String, TaskStatsByCategory> = HashMap::new();
+
+        for task in task_stats {
+            let entry = category_map
+                .entry(task.category.clone())
+                .or_insert(TaskStatsByCategory {
+                    category: task.category.clone(),
+                    completed_count: 0,
+                    postponed_count: 0,
+                    partially_completed_count: 0,
+                });
+
+            match task.status.as_str() {
+                "EXECUTADA" => entry.completed_count += task.count,
+                "ADIADA" => entry.postponed_count += task.count,
+                "PARCIALMENTE_EXECUTADA" => entry.partially_completed_count += task.count,
+                _ => (),
+            }
+        }
+
+        let result: Vec<TaskStatsByCategory> = category_map.into_iter().map(|(_, v)| v).collect();
+
+        Ok(result)
     }
 }

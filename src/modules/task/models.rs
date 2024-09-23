@@ -38,5 +38,19 @@ pub struct Task {
     pub end_date: DateTime<Utc>,
     pub status: Status,
     pub user_id: ObjectId,
-    pub category_id: ObjectId
+    pub category_id: ObjectId,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct TaskByCategoryAndStatus {
+    pub category: String,
+    pub status: String,
+    pub count: i32,
+}
+#[derive(Serialize, Deserialize)]
+pub struct TaskStatsByCategory {
+    pub category: String,
+    pub completed_count: i32,
+    pub postponed_count: i32,
+    pub partially_completed_count: i32,
 }
