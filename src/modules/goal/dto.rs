@@ -1,37 +1,35 @@
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use super::models::Priority;
+use super::models::{Priority, Status};
 
-#[derive(Deserialize, Validate)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct CreateGoalRequest {
-    #[validate(length(min = 1, max = 100))]
     pub title: String,
-    #[validate(length(min = 1, max = 500))]
     pub description: String,
-    pub start_date: DateTime<Utc>,
-    pub end_date: DateTime<Utc>,
+    pub end_date: Option<DateTime<Utc>>, // Tornando end_date opcional
     pub priority: Priority,
+    pub user_id: ObjectId,
 }
 
-#[derive(Deserialize, Validate)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdateGoalRequest {
-    #[validate(length(min = 1, max = 100))]
     pub title: Option<String>,
-    #[validate(length(min = 1, max = 500))]
     pub description: Option<String>,
-    pub start_date: Option<DateTime<Utc>>,
-    pub end_date: Option<DateTime<Utc>>,
+    pub end_date: Option<DateTime<Utc>>, // Tornando end_date opcional
     pub priority: Option<Priority>,
+    pub status: Option<Status>,
+    pub user_id: ObjectId,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GoalResponse {
     pub _id: String,
     pub title: String,
     pub description: String,
-    pub start_date: DateTime<Utc>,
-    pub end_date: DateTime<Utc>,
+    pub end_date: Option<DateTime<Utc>>, // Tornando end_date opcional
     pub priority: Priority,
+    pub status: Status,
 }

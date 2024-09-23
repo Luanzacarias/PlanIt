@@ -23,6 +23,26 @@ impl Priority {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Status {
+    #[serde(rename = "NOT_REACHED")]
+    NotReached,
+    #[serde(rename = "PARTIALLY_REACHED")]
+    PartiallyReached,
+    #[serde(rename = "REACHED")]
+    Reached,
+}
+
+impl Status {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Status::NotReached => "NOT_REACHED",
+            Status::PartiallyReached => "PARTIALLY_REACHED",
+            Status::Reached => "REACHED",
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Goal {
     #[serde(
@@ -34,8 +54,8 @@ pub struct Goal {
     pub id: Option<ObjectId>,
     pub title: String,
     pub description: String,
-    pub start_date: DateTime<Utc>,
     pub end_date: DateTime<Utc>,
     pub priority: Priority,
+    pub status: Status,
     pub user_id: ObjectId,
 }
