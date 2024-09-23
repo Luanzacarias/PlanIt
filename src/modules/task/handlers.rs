@@ -166,9 +166,33 @@ async fn delete_task(
     }
 }
 
+pub async fn get_task_stats(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<AuthState>,
+) -> impl IntoResponse {
+    // Inicializa o repositório e serviço
+    let repository = TaskRepository::new(&state.mongodb);
+    let service = TaskService::new(repository);
+
+    // Chama o serviço para obter as tarefas por categoria e status
+    match service.count_tasks_by_category_and_status(&user.id).await {
+        Ok(task_stats) => Json(ApiResponse::ok(
+            "Tasks by category and status retrieved successfully",
+            Some(task_stats),
+        ))
+        .into_response(),
+        Err(err) => Json(ApiResponse::server_error(
+            Some(&err.to_string()),
+            None::<()>,
+        ))
+        .into_response(),
+    }
+}
+
 pub fn handles() -> Router<Arc<AppState>> {
     Router::new()
         .route("/v1/tasks", post(create_task).get(get_tasks))
         .route("/v1/tasks/:task_id", put(update_task).delete(delete_task))
+        .route("/v1/tasks/categories", get(get_task_stats))
         .layer(middleware::from_fn(auth::middlewares::authorize))
 }

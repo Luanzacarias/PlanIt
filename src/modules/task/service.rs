@@ -6,7 +6,7 @@ use mongodb::error::Error;
 use thiserror::Error;
 
 use super::dto::{CreateTaskRequest, UpdateTaskRequest};
-use super::models::Task;
+use super::models::{Status, Task, TaskStatsByCategory};
 use super::repository::TaskRepository;
 
 #[derive(Error, Debug)]
@@ -153,5 +153,36 @@ impl TaskService {
 
     pub async fn get_all_user_tasks(&self, &user_id: &ObjectId) -> Result<Vec<Task>, Error> {
         self.repository.get_all_user_tasks(&user_id).await
+    }
+
+    pub async fn count_tasks_by_category_and_status(
+        &self,
+        user_id: &ObjectId,
+    ) -> Result<Vec<TaskStatsByCategory>, Error> {
+        let task_stats = self.repository.count_tasks_by_status(user_id).await?;
+
+        let mut category_map: HashMap<String, TaskStatsByCategory> = HashMap::new();
+
+        for task in task_stats {
+            let entry = category_map
+                .entry(task.category.clone())
+                .or_insert(TaskStatsByCategory {
+                    category: task.category.clone(),
+                    completed_count: 0,
+                    postponed_count: 0,
+                    partially_completed_count: 0,
+                });
+
+            match task.status.as_str() {
+                "EXECUTADA" => entry.completed_count += task.count,
+                "ADIADA" => entry.postponed_count += task.count,
+                "PARCIALMENTE_EXECUTADA" => entry.partially_completed_count += task.count,
+                _ => (),
+            }
+        }
+
+        let result: Vec<TaskStatsByCategory> = category_map.into_iter().map(|(_, v)| v).collect();
+
+        Ok(result)
     }
 }

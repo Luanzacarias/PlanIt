@@ -5,7 +5,9 @@ use mongodb::bson::Bson;
 use mongodb::error::Error;
 use mongodb::{bson::doc, Collection, Database};
 
-use super::models::{Status, Task};
+use crate::modules::category;
+
+use super::models::{Status, Task, TaskByCategoryAndStatus};
 
 pub struct TaskRepository {
     collection: Collection<Task>,
@@ -101,10 +103,7 @@ impl TaskRepository {
         Ok(tasks)
     }
 
-    pub async fn get_task_by_id(
-        &self,
-        &task_id: &ObjectId,
-    ) -> Result<Option<Task>, Error> {
+    pub async fn get_task_by_id(&self, &task_id: &ObjectId) -> Result<Option<Task>, Error> {
         let filter = doc! {"_id": task_id};
         self.collection.find_one(filter).await
     }
@@ -116,6 +115,70 @@ impl TaskRepository {
     ) -> Result<Option<Task>, Error> {
         let filter = doc! {"user_id": user_id, "title": title};
         self.collection.find_one(filter).await
+    }
+
+
+    pub async fn count_tasks_by_status(
+        &self,
+        user_id: &mongodb::bson::oid::ObjectId,
+    ) -> Result<Vec<TaskByCategoryAndStatus>, Error> {
+        let pipeline = vec![
+            doc! {
+                "$match": {
+                    "user_id": user_id,
+                }
+            },
+            doc! {
+                "$lookup": {
+                    "from": "categories",
+                    "localField": "category_id",
+                    "foreignField": "_id",
+                    "as": "category"
+                }
+            },
+            doc! {
+                "$unwind": {
+                    "path": "$category"
+                }
+            },
+            doc! {
+                "$group": {
+                    "_id": {
+                        "category": "$category.title",
+                        "status": "$status"
+                    },
+                    "count": { "$sum": 1 }
+                }
+            },
+            doc! {
+                "$project": {
+                    "category": "$_id.category",
+                    "status": "$_id.status",
+                    "count": 1
+                }
+            },
+        ];
+
+        let mut cursor = self.collection.aggregate(pipeline).await?;
+        let mut result: Vec<TaskByCategoryAndStatus> = Vec::new();
+
+        while cursor.advance().await? {
+            let doc = cursor.deserialize_current()?;
+
+            if let (Some(category), Some(status), Some(count)) = (
+                doc.get_str("category").ok(),
+                doc.get_str("status").ok(),
+                doc.get_i32("count").ok(),
+            ) {
+                result.push(TaskByCategoryAndStatus {
+                    category: category.to_string(),
+                    status: status.to_string(),
+                    count,
+                });
+            }
+        }
+
+        Ok(result)
     }
 
     pub async fn get_all_not_sent_notifications(&self, greater_than: DateTime<Utc>, last_than_or_equals: DateTime<Utc>) -> Result<Vec<Task>, Error> {
