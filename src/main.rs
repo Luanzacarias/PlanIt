@@ -11,7 +11,7 @@ use mongodb::Database;
 use std::env;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tower_http::cors::{CorsLayer};
+use tower_http::cors::CorsLayer;
 
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 
