@@ -28,13 +28,14 @@ impl GoalService {
         GoalService { repository }
     }
 
-    pub async fn create_goal(
+    pub async fn create_goal_for_user(
         &self,
+        user_id: ObjectId,
         request: CreateGoalRequest,
-    ) -> Result<GoalResponse, GoalServiceError> {
+    ) -> Result<ObjectId, GoalServiceError> {
         if let Some(_existing_goal) = self
             .repository
-            .get_goal_by_title(&request.user_id, &request.title)
+            .get_goal_by_title(&user_id, &request.title)
             .await?
         {
             return Err(GoalServiceError::GoalAlreadyExists);
@@ -42,65 +43,51 @@ impl GoalService {
 
         let goal = Goal {
             id: None,
-            user_id: request.user_id.clone(),
-            title: request.title.clone(),
-            description: request.description.clone(),
-            end_date: request.end_date.unwrap_or_else(|| Utc::now()),
-            priority: request.priority.clone(),
-            status: Status::NotReached,
-        };
-
-        let result = self.repository.create_goal(goal).await?;
-        Ok(GoalResponse {
-            _id: result.to_hex(),
+            user_id,
             title: request.title,
             description: request.description,
             end_date: request.end_date,
+            category_id: request.category_id,
             priority: request.priority,
             status: Status::NotReached,
-        })
+        };
+
+        Ok(self.repository.create_goal(goal).await?)
     }
 
-    pub async fn update_goal(
+    pub async fn update_user_goal(
         &self,
+        user_id: ObjectId,
         id: ObjectId,
         request: UpdateGoalRequest,
-    ) -> Result<GoalResponse, GoalServiceError> {
-        if self.repository.get_goal_by_id(&request.user_id).await?.is_none() {
+    ) -> Result<bool, GoalServiceError> {
+        if self.repository.get_user_goal_by_id(user_id, id).await?.is_none() {
             return Err(GoalServiceError::GoalNotFound);
         }
 
-        self.repository.update_goal(
+        let result = self.repository.update_goal(
             id,
-            request.title.clone(),
-            request.description.clone(),
-            request.end_date.clone(),
-            request.priority.clone(),
-            request.status.clone(),
+            request.title,
+            request.description,
+            request.end_date,
+            request.priority,
+            request.status,
+            request.category_id,
         ).await?;
-
-        let updated_goal = self.repository.get_goal_by_id(&request.user_id).await?.unwrap();
-        Ok(GoalResponse {
-            _id: updated_goal.id.unwrap().to_hex(),
-            title: updated_goal.title,
-            description: updated_goal.description,
-            end_date: Some(updated_goal.end_date),
-            priority: updated_goal.priority,
-            status: updated_goal.status,
-        })
+        Ok(result)
     }
 
     pub async fn delete_user_goal(
         &self,
+        user_id: ObjectId,
         goal_id: ObjectId,
-    ) -> Result<(), GoalServiceError> {
+    ) -> Result<bool, GoalServiceError> {
         let result = self
             .repository
-            .get_goal_by_id(&goal_id)
+            .get_user_goal_by_id(user_id, goal_id)
             .await;
         if let Ok(Some(_goal)) = result {
-            self.repository.delete_goal(goal_id).await?;
-            Ok(())
+            Ok(self.repository.delete_goal(goal_id).await?)
         } else {
             Err(GoalServiceError::GoalNotFound)
         }
@@ -109,34 +96,8 @@ impl GoalService {
     pub async fn get_all_user_goals(
         &self,
         user_id: &ObjectId,
-    ) -> Result<Vec<GoalResponse>, Error> {
+    ) -> Result<Vec<Goal>, Error> {
         let goals = self.repository.get_all_user_goals(user_id).await?;
-        Ok(goals.into_iter().map(|goal| GoalResponse {
-            _id: goal.id.unwrap().to_hex(),
-            title: goal.title,
-            description: goal.description,
-            end_date: Some(goal.end_date),
-            priority: goal.priority,
-            status: goal.status,
-        }).collect())
-    }
-
-    pub async fn get_all_goals(&self) -> Result<Vec<GoalResponse>, GoalServiceError> {
-        let goals = self.repository.get_all_goals().await?;
-        Ok(goals.into_iter().map(|goal| GoalResponse {
-            _id: goal.id.unwrap().to_hex(),
-            title: goal.title,
-            description: goal.description,
-            end_date: Some(goal.end_date),
-            priority: goal.priority,
-            status: goal.status,
-        }).collect())
-    }
-
-    pub async fn get_goal_by_id(
-        &self,
-        goal_id: &ObjectId,
-    ) -> Result<Option<Goal>, GoalServiceError> {
-        self.repository.get_goal_by_id(goal_id).await.map_err(GoalServiceError::DatabaseError)
+        Ok(goals)
     }
 }

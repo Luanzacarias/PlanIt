@@ -29,6 +29,7 @@ impl GoalRepository {
         end_date: Option<DateTime<Utc>>,
         priority: Option<Priority>,
         status: Option<Status>,
+        category_id: Option<ObjectId>,
     ) -> Result<bool, Error> {
         let filter = doc! { "_id": id };
         let mut update_doc = doc! {};
@@ -47,6 +48,9 @@ impl GoalRepository {
         }
         if let Some(status) = status {
             update_doc.insert("status", status.as_str());
+        }
+        if let Some(category_id) = category_id {
+            update_doc.insert("category_id", category_id);
         }
 
         let update = doc! { "$set": update_doc };
@@ -75,8 +79,8 @@ impl GoalRepository {
         Ok(goals)
     }
 
-    pub async fn get_goal_by_id(&self, goal_id: &ObjectId) -> Result<Option<Goal>, Error> {
-        let filter = doc! { "_id": goal_id };
+    pub async fn get_user_goal_by_id(&self, user_id: ObjectId, goal_id: ObjectId) -> Result<Option<Goal>, Error> {
+        let filter = doc! { "_id": goal_id, "user_id": user_id };
         self.collection.find_one(filter).await
     }
 
