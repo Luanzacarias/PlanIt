@@ -38,6 +38,7 @@ async fn main() {
         .nest("/", category::handles())
         .nest("/", goal::handles())
         .nest("/", task::handles())
+        .nest("/", notification::handles())
         .layer(CorsLayer::permissive())
         .with_state(state);
 

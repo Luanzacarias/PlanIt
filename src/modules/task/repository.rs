@@ -120,7 +120,7 @@ impl TaskRepository {
 
     pub async fn get_all_not_sent_notifications(&self, greater_than: DateTime<Utc>, last_than_or_equals: DateTime<Utc>) -> Result<Vec<Task>, Error> {
         let filter = doc! {
-            "notification.scheduled_time": { "$gte": greater_than.to_rfc3339()},
+            "notification.scheduled_time": { "$gte": greater_than.to_rfc3339(), "$lte": last_than_or_equals.to_rfc3339() },
             "notification.sent": false
         };
 
@@ -139,5 +139,20 @@ impl TaskRepository {
         let result = self.collection.update_one(filter, update).await?;
 
         Ok(result.modified_count > 0)
+    }
+
+    pub async fn get_all_with_notifications(&self, user_id: &ObjectId) -> Result<Vec<Task>, Error> {
+        let filter = doc! {
+            "user_id": user_id,
+            "notification": { "$ne": null }
+        };
+
+        let mut cursor = self.collection.find(filter).await?;
+        let mut notifications = Vec::new();
+        while cursor.advance().await? {
+            notifications.push(cursor.deserialize_current()?);
+        }
+
+        Ok(notifications)
     }
 }
