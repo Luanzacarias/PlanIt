@@ -1,3 +1,5 @@
+use crate::modules::notification::models::Notification;
+
 use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Bson;
@@ -25,16 +27,20 @@ impl TaskRepository {
     pub async fn update_task(
         &self,
         task_id: &ObjectId,
-        title: String,
+        title: Option<String>,
         description: Option<String>,
         start_date: Option<DateTime<Utc>>,
         end_date: Option<DateTime<Utc>>,
         status: Option<Status>,
         category_id: Option<ObjectId>,
+        notification: Option<Option<Notification>>,
     ) -> Result<bool, Error> {
         let filter = doc! { "_id": task_id };
-
-        let mut update_doc = doc! { "title": title };
+    
+        let mut update_doc = doc! {};
+        if let Some(title) = title {
+            update_doc.insert("title", title);
+        }
         if let Some(description) = description {
             update_doc.insert("description", description);
         }
@@ -50,14 +56,28 @@ impl TaskRepository {
         if let Some(category_id) = category_id {
             update_doc.insert("category_id", category_id);
         }
-
+        if let Some(notification) = notification {
+            if notification.is_some() {
+                let notification = notification.unwrap();
+                let notification_doc = doc! {
+                    "_id": notification.id,
+                    "time_unit": notification.time_unit.as_str().to_string(),
+                    "time_value": notification.time_value as i64,
+                    "scheduled_time": notification.scheduled_time.to_rfc3339(),
+                    "sent": notification.sent,
+                };
+                update_doc.insert("notification", notification_doc);
+            } else {
+                update_doc.insert("notification", Bson::Null);
+            }
+        }
+    
         let update = doc! { "$set": update_doc };
-
         let result = self.collection.update_one(filter, update).await?;
-
+    
         Ok(result.modified_count > 0)
     }
-
+    
     pub async fn delete_task(&self, task_id: &ObjectId) -> Result<bool, Error> {
         let query = doc! {"_id": task_id};
 
@@ -93,10 +113,9 @@ impl TaskRepository {
     pub async fn get_task_by_title(
         &self,
         &user_id: &ObjectId,
-        &category_id: &ObjectId,
         title: &str,
     ) -> Result<Option<Task>, Error> {
-        let filter = doc! {"user_id": user_id, "category_id": category_id, "title": title};
+        let filter = doc! {"user_id": user_id, "title": title};
         self.collection.find_one(filter).await
     }
 

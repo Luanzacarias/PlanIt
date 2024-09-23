@@ -38,5 +38,6 @@ pub struct Task {
     pub end_date: DateTime<Utc>,
     pub status: Status,
     pub user_id: ObjectId,
-    pub category_id: ObjectId
+    pub category_id: ObjectId,
+    pub notification: Option<crate::modules::notification::models::Notification>,
 }
